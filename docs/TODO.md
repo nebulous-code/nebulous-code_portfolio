@@ -24,24 +24,24 @@ These are the remaining tasks to finish M1 and have a deployable site:
 
 - [x] **Create a fine-grained PAT** on GitHub with `Contents: read` and `Metadata: read` for the relevant repos. Save it somewhere safe; you'll use it in two places.
 
-- [ ] **Set up Render**
-  - [ ] Create a new Static Site pointing at this repo
-  - [ ] Add `GITHUB_TOKEN` env var with the PAT
-  - [ ] Copy the Deploy Hook URL
-  - [ ] Add `nebulouscode.com` as a custom domain and configure DNS
+- [x] **Set up Render**
+  - [x] Create a new Static Site pointing at this repo
+  - [x] Add `GITHUB_TOKEN` env var with the PAT
+  - [x] Copy the Deploy Hook URL
+  - [x] Add `nebulouscode.com` as a custom domain and configure DNS
 
-- [ ] **Wire up the GitHub Action**
-  - [ ] Add `RENDER_DEPLOY_HOOK_URL` as a repo secret
-  - [ ] Manually trigger the workflow once to confirm it fires a Render build
-  - [ ] Confirm the cron schedule is active (it'll show up in the Actions tab)
+- [x] **Wire up the GitHub Action**
+  - [x] Add `RENDER_DEPLOY_HOOK_URL` as a repo secret
+  - [x] Manually trigger the workflow once to confirm it fires a Render build
+  - [x] Confirm the cron schedule is active (it'll show up in the Actions tab)
 
-- [ ] **Smoke test on production**
-  - [ ] Visit nebulouscode.com after first deploy
-  - [ ] Confirm the sparkline renders (even if data is sparse)
-  - [ ] Confirm project cards show "Updated X days ago"
-  - [ ] Confirm clicking through to a case study works
+- [x] **Smoke test on production**
+  - [x] Visit nebulouscode.com after first deploy
+  - [x] Confirm the sparkline renders (even if data is sparse)
+  - [x] Confirm project cards show "Updated X days ago"
+  - [x] Confirm clicking through to a case study works
 
-- [ ] **Commit the docs/ split** (this README rework)
+- [x] **Commit the docs/ split** (this README rework)
 
 ### Known M1 limitations (deferred to later milestones)
 
