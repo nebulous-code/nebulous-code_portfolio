@@ -36,6 +36,7 @@ import { getContentAllowlist, getTrackedRepos } from '~/config/projects';
 
 const GITHUB_API = 'https://api.github.com';
 const TOKEN = process.env['GITHUB_TOKEN'];
+console.log('[github] Token present:', !!TOKEN, 'length:', TOKEN?.length ?? 0)
 
 interface GitHubEventCommit {
   sha: string;
