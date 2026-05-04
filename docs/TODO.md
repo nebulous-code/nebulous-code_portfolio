@@ -14,15 +14,15 @@ Status legend: `[ ]` not started · `[~]` in progress · `[x]` done
 
 These are the remaining tasks to finish M1 and have a deployable site:
 
-- [ ] **Verify the project locally**
-  - [ ] `npm install` succeeds
-  - [ ] `npm run dev` starts and `http://localhost:4321` loads
-  - [ ] All routes navigate without 404 (`/`, `/about`, `/projects`, `/projects/pokemon-dashboard`, `/projects/cube-practice`, `/projects/chip8-emulator`, `/resume`, `/contact`)
-  - [ ] `npm run build` succeeds and produces `dist/`
+- [x] **Verify the project locally**
+  - [x] `npm install` succeeds
+  - [x] `npm run dev` starts and `http://localhost:4321` loads
+  - [x] All routes navigate without 404 (`/`, `/about`, `/projects`, `/projects/pokemon-dashboard`, `/projects/cube-practice`, `/projects/chip8-emulator`, `/resume`, `/contact`)
+  - [x] `npm run build` succeeds and produces `dist/`
 
-- [ ] **Confirm or correct the repo names** in `src/config/projects.ts`. The scaffolded values are best guesses (`nebulous-code/pokemon-dashboard` etc.) — if any are wrong, the per-project "last update" labels will silently miss until corrected.
+- [x] **Confirm or correct the repo names** in `src/config/projects.ts`. The scaffolded values are best guesses (`nebulous-code/pokemon-dashboard` etc.) — if any are wrong, the per-project "last update" labels will silently miss until corrected.
 
-- [ ] **Create a fine-grained PAT** on GitHub with `Contents: read` and `Metadata: read` for the relevant repos. Save it somewhere safe; you'll use it in two places.
+- [x] **Create a fine-grained PAT** on GitHub with `Contents: read` and `Metadata: read` for the relevant repos. Save it somewhere safe; you'll use it in two places.
 
 - [ ] **Set up Render**
   - [ ] Create a new Static Site pointing at this repo
