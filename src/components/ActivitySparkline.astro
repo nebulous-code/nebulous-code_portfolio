@@ -1,0 +1,59 @@
+---
+/**
+ * Activity sparkline.
+ *
+ * Renders an array of {date, count} points as a tiny inline SVG bar chart.
+ * Pure static SVG — no JS needed in the browser, no Vue island. The design
+ * intent is "subtle, dashboard-y" rather than a full-blown chart.
+ *
+ * Data sanitization happens upstream in src/lib/github.ts; this component
+ * just renders whatever counts it's given.
+ */
+
+import type { ActivityPoint } from '~/lib/github';
+
+interface Props {
+  points: ActivityPoint[];
+  width?: number;
+  height?: number;
+}
+
+const { points, width = 600, height = 60 } = Astro.props;
+
+const max = Math.max(1, ...points.map((p) => p.count));
+const barWidth = points.length > 0 ? width / points.length : 0;
+const totalCommits = points.reduce((sum, p) => sum + p.count, 0);
+---
+
+<div>
+  <p class="mb-2 text-xs" style="color: var(--color-text-dim)">
+    {totalCommits} commits in the last {points.length} days (across all branches, public + private)
+  </p>
+  <svg
+    viewBox={`0 0 ${width} ${height}`}
+    width="100%"
+    height={height}
+    role="img"
+    aria-label={`Commit activity over the last ${points.length} days`}
+  >
+    {
+      points.map((point, i) => {
+        const barHeight = (point.count / max) * height;
+        const x = i * barWidth;
+        const y = height - barHeight;
+        return (
+          <rect
+            x={x}
+            y={y}
+            width={Math.max(1, barWidth - 1)}
+            height={barHeight}
+            fill="var(--color-accent)"
+            opacity={point.count === 0 ? 0.15 : 0.85}
+          >
+            <title>{`${point.date}: ${point.count} commit${point.count === 1 ? '' : 's'}`}</title>
+          </rect>
+        );
+      })
+    }
+  </svg>
+</div>

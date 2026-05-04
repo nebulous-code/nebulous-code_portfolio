@@ -1,0 +1,38 @@
+@import "tailwindcss";
+
+/*
+ * Tailwind v4 uses CSS-based config. This is where design tokens will live
+ * once we do the design handoff in slice 3. For now, just minimal defaults
+ * so the site is readable while we build out structure.
+ *
+ * Slice 3 will replace this with a proper token set (colors, type scale,
+ * spacing scale) handed off to Claude design.
+ */
+
+@theme {
+  /* Placeholder dark palette. NOT final. Will be replaced in slice 3. */
+  --color-bg: #0a0a0f;
+  --color-surface: #14141c;
+  --color-border: #2a2a35;
+  --color-text: #e5e5ec;
+  --color-text-dim: #8a8a9a;
+  --color-accent: #6366f1;
+}
+
+html {
+  background-color: var(--color-bg);
+  color: var(--color-text);
+  font-family: ui-sans-serif, system-ui, -apple-system, sans-serif;
+}
+
+body {
+  min-height: 100vh;
+}
+
+a {
+  color: var(--color-accent);
+}
+
+a:hover {
+  text-decoration: underline;
+}

@@ -1,0 +1,47 @@
+# Scheduled rebuild for nebulouscode.com
+#
+# Why this exists:
+#   The site bakes GitHub activity data (commit sparkline, last-update
+#   labels) into static HTML at build time. To keep that data fresh without
+#   wiring up a webhook into every project repo, this workflow triggers a
+#   Render deploy on a schedule. The actual fetch + build happens on Render.
+#
+# Triggers:
+#   - schedule: every 6 hours.
+#   - workflow_dispatch: lets you run "Rebuild now" manually from the
+#     Actions tab when you want a commit to show up immediately.
+#
+# Setup checklist (one-time):
+#   1. In Render, create the static site from this repo.
+#   2. In Render, add a Deploy Hook (Settings → Deploy Hook).
+#   3. In this GitHub repo, add a secret named RENDER_DEPLOY_HOOK_URL with
+#      the URL Render gave you.
+#   4. In Render, add an environment variable GITHUB_TOKEN containing a
+#      fine-grained PAT with read access to your public repos and your
+#      private repos. The token is used at build time by src/lib/github.ts.
+
+name: scheduled-rebuild
+
+on:
+  schedule:
+    # Every 6 hours, on the hour.
+    - cron: '0 */6 * * *'
+  workflow_dispatch: {}
+
+jobs:
+  trigger-render-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger Render deploy hook
+        run: |
+          if [ -z "${{ secrets.RENDER_DEPLOY_HOOK_URL }}" ]; then
+            echo "::error::RENDER_DEPLOY_HOOK_URL secret is not set."
+            exit 1
+          fi
+          echo "Triggering Render deploy..."
+          response=$(curl -s -o /dev/null -w "%{http_code}" -X POST "${{ secrets.RENDER_DEPLOY_HOOK_URL }}")
+          echo "Render responded with HTTP $response"
+          if [ "$response" -ge 400 ]; then
+            echo "::error::Render returned an error status."
+            exit 1
+          fi

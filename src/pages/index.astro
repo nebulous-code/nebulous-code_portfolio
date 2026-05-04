@@ -1,0 +1,78 @@
+---
+/**
+ * Home page.
+ *
+ * The "developer is a verb" dashboard. Three live signals here:
+ *   1. Currently-building text (from src/content/now.md, hand-curated)
+ *   2. Activity sparkline (from getCommitActivity, baked at build time)
+ *   3. Project cards with last-update labels (from getProjectActivity)
+ *
+ * All GitHub data is fetched during the build via src/lib/github.ts, which
+ * applies the deny-by-default sanitization rules. By the time this page is
+ * rendered to static HTML, no API calls remain.
+ */
+
+import BaseLayout from '~/layouts/BaseLayout.astro';
+import ProjectCard from '~/components/ProjectCard.astro';
+import ActivitySparkline from '~/components/ActivitySparkline.astro';
+import { getFeaturedProjects } from '~/config/projects';
+import { getCommitActivity, getProjectActivity } from '~/lib/github';
+
+const GITHUB_USERNAME = 'nebulous-code';
+
+// Build-time data fetch. Each function is fault-tolerant — a failed fetch
+// returns an empty/degraded result rather than crashing the build.
+const [activity, projectActivity] = await Promise.all([
+  getCommitActivity(GITHUB_USERNAME, 90),
+  getProjectActivity(),
+]);
+
+const featured = getFeaturedProjects();
+const activityByRepo = new Map(projectActivity.map((p) => [p.repo, p]));
+---
+
+<BaseLayout title="nebulous-code">
+  <section class="mb-16">
+    <h1 class="mb-3 text-4xl font-bold">Nicholas</h1>
+    <p class="text-lg" style="color: var(--color-text-dim)">
+      Full-stack developer with a decade of experience and a soft spot for reporting,
+      data pipelines, and tools that make other developers faster.
+    </p>
+  </section>
+
+  <section class="mb-12">
+    <h2 class="mb-4 text-sm font-semibold uppercase tracking-wider" style="color: var(--color-text-dim)">
+      Recent Activity
+    </h2>
+    <ActivitySparkline points={activity} />
+  </section>
+
+  <section class="mb-16">
+    <h2 class="mb-4 text-sm font-semibold uppercase tracking-wider" style="color: var(--color-text-dim)">
+      Currently Building
+    </h2>
+    {/*
+      TODO slice 5: read this from src/content/now.md properly via a content
+      collection. For slice 1 we just hardcode a placeholder so the page renders.
+    */}
+    <p>
+      Working on the <strong>Pokémon Card Market Intelligence Dashboard</strong> —
+      recently shipped a Magikarp-themed dark UI and price distribution charts.
+      Also drilling OLL algorithms in <strong>Cube Practice</strong> and
+      sketching out a Game Boy emulator as the next deep dive.
+    </p>
+  </section>
+
+  <section>
+    <h2 class="mb-4 text-sm font-semibold uppercase tracking-wider" style="color: var(--color-text-dim)">
+      Projects
+    </h2>
+    <div class="grid gap-4">
+      {
+        featured.map((project) => (
+          <ProjectCard project={project} activity={activityByRepo.get(project.repo)} />
+        ))
+      }
+    </div>
+  </section>
+</BaseLayout>

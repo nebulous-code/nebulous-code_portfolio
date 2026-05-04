@@ -1,0 +1,28 @@
+---
+import BaseLayout from '~/layouts/BaseLayout.astro';
+import ProjectCard from '~/components/ProjectCard.astro';
+import { getFeaturedProjects } from '~/config/projects';
+import { getProjectActivity } from '~/lib/github';
+
+const featured = getFeaturedProjects();
+const projectActivity = await getProjectActivity();
+const activityByRepo = new Map(projectActivity.map((p) => [p.repo, p]));
+---
+
+<BaseLayout title="Projects — nebulous-code">
+  <h1 class="mb-6 text-3xl font-bold">Projects</h1>
+  <p class="mb-8" style="color: var(--color-text-dim)">
+    Things I've built. Each one has a longer case study with the decisions,
+    the dead ends, and what I'd do differently.
+  </p>
+
+  {/* TODO slice 5: tag-based filter UI (probably a small Vue island) */}
+
+  <div class="grid gap-4">
+    {
+      featured.map((project) => (
+        <ProjectCard project={project} activity={activityByRepo.get(project.repo)} />
+      ))
+    }
+  </div>
+</BaseLayout>

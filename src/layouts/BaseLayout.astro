@@ -1,0 +1,46 @@
+---
+/**
+ * Base layout used by all pages.
+ *
+ * Slice 1 keeps this minimal — just nav, header, footer, and a content slot.
+ * Real design comes in slice 3 after the design handoff.
+ */
+
+import '~/styles/global.css';
+
+interface Props {
+  title: string;
+  description?: string;
+}
+
+const { title, description = 'Nicholas — software developer.' } = Astro.props;
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content={description} />
+    <title>{title}</title>
+  </head>
+  <body>
+    <div class="mx-auto max-w-3xl px-6 py-8">
+      <header class="mb-12 flex items-center justify-between">
+        <a href="/" class="font-mono text-lg">nebulous-code</a>
+        <nav class="flex gap-6 text-sm">
+          <a href="/projects">Projects</a>
+          <a href="/about">About</a>
+          <a href="/resume">Resume</a>
+          <a href="/contact">Contact</a>
+        </nav>
+      </header>
+      <main>
+        <slot />
+      </main>
+      <footer class="mt-24 border-t border-[var(--color-border)] pt-6 text-sm" style="color: var(--color-text-dim)">
+        <p>© {new Date().getFullYear()} Nicholas · nebulouscode.com</p>
+      </footer>
+    </div>
+  </body>
+</html>

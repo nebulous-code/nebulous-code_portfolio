@@ -1,0 +1,67 @@
+---
+/**
+ * Dynamic case study route.
+ *
+ * For each MDX file in src/content/projects/, this generates a static page
+ * at /projects/[slug]. The page combines the MDX body (the writeup) with
+ * project metadata from src/config/projects.ts (live demo URL, repo URL,
+ * visibility-based affordances).
+ *
+ * The slug field in the MDX frontmatter MUST match a slug in PROJECTS for
+ * the secondary links to render correctly.
+ */
+
+import BaseLayout from '~/layouts/BaseLayout.astro';
+import { getCollection, render } from 'astro:content';
+import { getProjectBySlug } from '~/config/projects';
+
+export async function getStaticPaths() {
+  const entries = await getCollection('projects');
+  return entries.map((entry) => ({
+    params: { slug: entry.data.slug },
+    props: { entry },
+  }));
+}
+
+const { entry } = Astro.props;
+const { Content } = await render(entry);
+const project = getProjectBySlug(entry.data.slug);
+---
+
+<BaseLayout title={`${entry.data.title} — nebulous-code`} description={entry.data.summary}>
+  <article>
+    <header class="mb-8">
+      <p class="mb-2 text-sm" style="color: var(--color-text-dim)">
+        {entry.data.publishedAt.toLocaleDateString('en-US', { year: 'numeric', month: 'long' })}
+      </p>
+      <h1 class="mb-3 text-3xl font-bold">{entry.data.title}</h1>
+      <p class="text-lg" style="color: var(--color-text-dim)">{entry.data.summary}</p>
+
+      {
+        project && (
+          <div class="mt-4 flex flex-wrap gap-3 text-sm">
+            {project.liveDemoUrl && (
+              <a href={project.liveDemoUrl} target="_blank" rel="noopener">
+                Live demo →
+              </a>
+            )}
+            {project.visibility === 'public' && (
+              <a href={`https://github.com/${project.repo}`} target="_blank" rel="noopener">
+                Code →
+              </a>
+            )}
+            {project.visibility === 'private-saas' && project.productUrl && (
+              <a href={project.productUrl} target="_blank" rel="noopener">
+                Visit product →
+              </a>
+            )}
+          </div>
+        )
+      }
+    </header>
+
+    <div class="space-y-4">
+      <Content />
+    </div>
+  </article>
+</BaseLayout>

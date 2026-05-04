@@ -1,0 +1,94 @@
+---
+/**
+ * Project card.
+ *
+ * Renders different secondary links based on the project's `visibility`:
+ *   - 'public'       → Live demo (if any) + Code link
+ *   - 'private-saas' → Live product link, no code link
+ *   - 'private-wip'  → Minimal — name + tagline only, no links
+ *
+ * Also handles the case where `lastCommitMessage` is null (either because
+ * the repo isn't allowlisted, or because the fetch failed). When there's no
+ * message, we fall back to a neutral "Last update: <date>" line so the card
+ * still feels alive.
+ */
+
+import type { ProjectConfig } from '~/config/projects';
+import type { ProjectActivity } from '~/lib/github';
+
+interface Props {
+  project: ProjectConfig;
+  activity?: ProjectActivity | undefined;
+}
+
+const { project, activity } = Astro.props;
+
+const lastUpdateLabel = (() => {
+  if (!activity?.lastCommitDate) return null;
+  const d = new Date(activity.lastCommitDate);
+  const days = Math.round((Date.now() - d.getTime()) / (24 * 60 * 60 * 1000));
+  if (days === 0) return 'Updated today';
+  if (days === 1) return 'Updated yesterday';
+  if (days < 30) return `Updated ${days} days ago`;
+  if (days < 365) return `Updated ${Math.round(days / 30)} months ago`;
+  return `Updated ${Math.round(days / 365)} years ago`;
+})();
+
+const showCommitMessage =
+  project.visibility === 'public' && activity?.lastCommitMessage;
+---
+
+<article
+  class="rounded-lg border p-6"
+  style="border-color: var(--color-border); background: var(--color-surface)"
+>
+  <h3 class="mb-1 text-lg font-semibold">
+    <a href={`/projects/${project.slug}`}>{project.name}</a>
+  </h3>
+  <p class="mb-4 text-sm" style="color: var(--color-text-dim)">{project.tagline}</p>
+
+  {
+    showCommitMessage && (
+      <p class="mb-3 font-mono text-xs" style="color: var(--color-text-dim)">
+        <span style="color: var(--color-accent)">›</span>{' '}
+        {activity!.lastCommitMessage}
+      </p>
+    )
+  }
+
+  {
+    lastUpdateLabel && (
+      <p class="mb-4 text-xs" style="color: var(--color-text-dim)">
+        {lastUpdateLabel}
+      </p>
+    )
+  }
+
+  <div class="flex flex-wrap gap-3 text-sm">
+    <a href={`/projects/${project.slug}`}>Case study →</a>
+
+    {
+      project.liveDemoUrl && (
+        <a href={project.liveDemoUrl} target="_blank" rel="noopener">
+          Live demo →
+        </a>
+      )
+    }
+
+    {
+      project.visibility === 'public' && (
+        <a href={`https://github.com/${project.repo}`} target="_blank" rel="noopener">
+          Code →
+        </a>
+      )
+    }
+
+    {
+      project.visibility === 'private-saas' && project.productUrl && (
+        <a href={project.productUrl} target="_blank" rel="noopener">
+          Visit product →
+        </a>
+      )
+    }
+  </div>
+</article>

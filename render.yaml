@@ -1,0 +1,31 @@
+# Render deployment config for nebulouscode.com
+#
+# This file is optional — you can also configure the static site through
+# Render's web UI. It's included here so the deployment is reproducible
+# from the repo and so the build settings live alongside the code.
+#
+# After connecting the repo in Render, this config will be detected and
+# used. Make sure the GITHUB_TOKEN environment variable is added in the
+# Render service settings (it's a secret, so don't commit it).
+
+services:
+  - type: web
+    name: nebulouscode
+    runtime: static
+    buildCommand: npm install && npm run build
+    staticPublishPath: ./dist
+    pullRequestPreviewsEnabled: false
+    # Cache control: HTML pages should revalidate often (since they're
+    # rebuilt every 6h with fresh GitHub data); assets can cache longer.
+    headers:
+      - path: /*
+        name: Cache-Control
+        value: public, max-age=0, must-revalidate
+      - path: /_astro/*
+        name: Cache-Control
+        value: public, max-age=31536000, immutable
+    envVars:
+      - key: GITHUB_TOKEN
+        sync: false # mark as secret; set the value in Render's UI
+      - key: NODE_VERSION
+        value: '20'
