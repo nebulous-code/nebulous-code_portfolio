@@ -22,12 +22,12 @@ const { points, width = 600, height = 60 } = Astro.props;
 
 const max = Math.max(1, ...points.map((p) => p.count));
 const barWidth = points.length > 0 ? width / points.length : 0;
-const totalCommits = points.reduce((sum, p) => sum + p.count, 0);
+const totalPushes = points.reduce((sum, p) => sum + p.count, 0);
 ---
 
 <div>
   <p class="mb-2 text-xs" style="color: var(--color-text-dim)">
-    {totalCommits} commits in the last {points.length} days (across all branches, public + private)
+    {totalPushes} pushes in the last {points.length} days (across all branches, public & private)
   </p>
   <svg
     viewBox={`0 0 ${width} ${height}`}
@@ -50,7 +50,7 @@ const totalCommits = points.reduce((sum, p) => sum + p.count, 0);
             fill="var(--color-accent)"
             opacity={point.count === 0 ? 0.15 : 0.85}
           >
-            <title>{`${point.date}: ${point.count} commit${point.count === 1 ? '' : 's'}`}</title>
+            <title>{`${point.date}: ${point.count} push${point.count === 1 ? '' : 'es'}`}</title>
           </rect>
         );
       })

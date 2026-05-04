@@ -35,7 +35,7 @@
 import { getContentAllowlist, getTrackedRepos } from '~/config/projects';
 
 const GITHUB_API = 'https://api.github.com';
-const TOKEN = process.env['GITHUB_TOKEN'];
+const TOKEN = import.meta.env['GITHUB_TOKEN'] ?? process.env['GITHUB_TOKEN']
 console.log('[github] Token present:', !!TOKEN, 'length:', TOKEN?.length ?? 0)
 
 interface GitHubEventCommit {
@@ -123,8 +123,6 @@ export async function getCommitActivity(
   const cutoff = Date.now() - days * 24 * 60 * 60 * 1000;
 
   try {
-    // Authenticated calls to /events return both public and private activity
-    // for the authenticated user; unauthenticated falls back to public only.
     const path = TOKEN
       ? `/users/${username}/events?per_page=100`
       : `/users/${username}/events/public?per_page=100`;
@@ -136,16 +134,18 @@ export async function getCommitActivity(
       if (Number.isNaN(ts) || ts < cutoff) continue;
 
       const day = event.created_at.slice(0, 10);
-      const commits = event.payload.commits ?? [];
-      // Each PushEvent can contain multiple commits; count them individually.
-      buckets.set(day, (buckets.get(day) ?? 0) + commits.length);
+      // Each PushEvent counts as one push. The /users/{u}/events endpoint
+      // does not include the commits array (the /public variant does), so
+      // counting individual commits would require an extra API call per
+      // event. Treating a push as the unit of activity is simpler and the
+      // signal value is the same for "is this person actively building."
+      buckets.set(day, (buckets.get(day) ?? 0) + 1);
     }
   } catch (err) {
     console.warn('[github] getCommitActivity failed:', err);
     return [];
   }
 
-  // Fill in missing days with zero so the sparkline has a continuous x-axis.
   const points: ActivityPoint[] = [];
   for (let i = days - 1; i >= 0; i--) {
     const d = new Date(Date.now() - i * 24 * 60 * 60 * 1000);
