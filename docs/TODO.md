@@ -43,6 +43,11 @@ These are the remaining tasks to finish M1 and have a deployable site:
 
 - [x] **Commit the docs/ split** (this README rework)
 
+Retro: 
+
+- Vite env loading: import.meta.env is the dev-server path, process.env is the build-time path, the ?? fallback handles both
+- GitHub events API quirk: /users/{u}/events (authenticated) does not include the commits array in PushEvent payloads, only /users/{u}/events/public does. We're counting pushes, not commits, as a result. The label says "pushes" intentionally. Might change this in the future.
+ 
 ### Known M1 limitations (deferred to later milestones)
 
 - Visually unstyled — placeholder palette in `src/styles/global.css` will be replaced in M3
