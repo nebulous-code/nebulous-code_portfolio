@@ -14,7 +14,7 @@
 
 import BaseLayout from '~/layouts/BaseLayout.astro';
 import ProjectCard from '~/components/ProjectCard.astro';
-import ActivitySparkline from '~/components/ActivitySparkline.astro';
+import PushChart from '~/components/PushChart.astro';
 import { getFeaturedProjects } from '~/config/projects';
 import { getCommitActivity, getProjectActivity } from '~/lib/github';
 
@@ -89,7 +89,7 @@ const activityByRepo = new Map(projectActivity.map((p) => [p.repo, p]));
     <h2 class="mb-4 text-sm font-semibold uppercase tracking-wider" style="color: var(--color-text-dim)">
       Recent Activity
     </h2>
-    <ActivitySparkline points={activity} />
+    <PushChart points={activity} />
   </section>
 
   <section class="mb-16">

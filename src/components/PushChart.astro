@@ -1,0 +1,166 @@
+---
+/**
+ * PushChart — signature 90-day activity bar chart.
+ *
+ * Bars are blue at varying opacity (0.4–1.0) by count. Today's bar is
+ * always orange — even when zero, rendered as a low-opacity tick so the
+ * rightmost position is visually anchored.
+ *
+ * Empty (zero-count) days render as a low-opacity tick at the bottom
+ * so the timeline always reads continuous, never gappy.
+ *
+ * Includes an eyebrow row above the chart showing total + max/day —
+ * always visible per spec.
+ *
+ * Usage:
+ *   <PushChart points={activityPoints} />
+ *   <PushChart points={activityPoints} unit="commits" height={80} />
+ */
+
+import Eyebrow from './Eyebrow.astro';
+
+interface Point {
+  date: string;
+  count: number;
+}
+
+interface Props {
+  points: Point[];
+  height?: number;
+  unit?: string;
+  ariaLabel?: string;
+  showEyebrow?: boolean;
+}
+
+const {
+  points,
+  height = 64,
+  unit = 'pushes',
+  ariaLabel = 'activity over the last 90 days',
+  showEyebrow = false,
+} = Astro.props;
+
+// Compute aggregate stats for the eyebrow row.
+const total = points.reduce((sum, p) => sum + p.count, 0);
+const max = Math.max(0, ...points.map((p) => p.count));
+const days = points.length;
+
+// Drawing math. The chart is rendered as inline SVG with a viewBox sized
+// to the data — the actual rendered size is set via CSS width: 100%.
+// Each bar gets a slot of width 1; the bar itself is slightly narrower
+// to leave a thin gap between bars.
+const SLOT_W = 4; // viewBox units per day
+const BAR_W = 3; // actual bar width within the slot
+const VB_W = days * SLOT_W;
+const VB_H = height;
+const BASELINE_H = 1; // 1px line at bottom
+const MIN_BAR_H = 1.5; // empty days render as a 1.5-unit tick
+
+const lastIndex = points.length - 1;
+
+// Opacity mapping: 0 -> 0.18 (empty tick), 1+ -> 0.4..1.0 scaling with count.
+// At max count, opacity is 1.0.
+function opacityFor(count: number): number {
+  if (count === 0) return 0.18;
+  if (max === 0) return 1.0;
+  return 0.4 + 0.6 * (count / max);
+}
+
+// Bar height: empty days are MIN_BAR_H (a tick); non-empty scale up to
+// the full height available above the baseline.
+function barHeightFor(count: number): number {
+  const usable = VB_H - BASELINE_H;
+  if (count === 0) return MIN_BAR_H;
+  if (max === 0) return MIN_BAR_H;
+  return Math.max(MIN_BAR_H, (count / max) * usable);
+}
+
+const bars = points.map((p, i) => {
+  const isToday = i === lastIndex;
+  const h = barHeightFor(p.count);
+  const x = i * SLOT_W + (SLOT_W - BAR_W) / 2;
+  const y = VB_H - BASELINE_H - h;
+  return {
+    x,
+    y,
+    h,
+    color: isToday ? 'var(--color-orange)' : 'var(--color-blue)',
+    opacity: opacityFor(p.count),
+    titleText: `${p.count} ${unit} on ${p.date}${isToday ? ' (today)' : ''}`,
+  };
+});
+---
+
+<div class="push-chart">
+  <div class="meta-row">
+    {showEyebrow ? <Eyebrow>activity</Eyebrow> : <span />}
+    <span class="meta-stats">
+      <span>{total} {unit} / {days}d</span>
+      <span class="meta-sep">·</span>
+      <span>max {max}/d</span>
+    </span>
+  </div>
+
+  <svg
+    class="chart"
+    viewBox={`0 0 ${VB_W} ${VB_H}`}
+    preserveAspectRatio="none"
+    role="img"
+    aria-label={ariaLabel}
+  >
+    {bars.map((bar) => (
+      <rect
+        x={bar.x}
+        y={bar.y}
+        width={BAR_W}
+        height={bar.h}
+        fill={bar.color}
+        opacity={bar.opacity}
+      >
+        <title>{bar.titleText}</title>
+      </rect>
+    ))}
+    {/* 1px baseline */}
+    <line
+      x1="0"
+      y1={VB_H - 0.5}
+      x2={VB_W}
+      y2={VB_H - 0.5}
+      stroke="var(--color-line)"
+      stroke-width="1"
+      vector-effect="non-scaling-stroke"
+    />
+  </svg>
+</div>
+
+<style>
+  .push-chart {
+    width: 100%;
+  }
+
+  .meta-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: var(--space-3);
+  }
+
+  .meta-stats {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--color-ink-faint);
+    display: inline-flex;
+    gap: var(--space-2);
+  }
+
+  .meta-sep {
+    color: var(--color-ink-faint);
+    opacity: 0.6;
+  }
+
+  .chart {
+    display: block;
+    width: 100%;
+    height: auto;
+  }
+</style>

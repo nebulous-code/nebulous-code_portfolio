@@ -36,7 +36,6 @@ import { getContentAllowlist, getTrackedRepos } from '~/config/projects';
 
 const GITHUB_API = 'https://api.github.com';
 const TOKEN = import.meta.env['GITHUB_TOKEN'] ?? process.env['GITHUB_TOKEN']
-console.log('[github] Token present:', !!TOKEN, 'length:', TOKEN?.length ?? 0)
 
 interface GitHubEventCommit {
   sha: string;
@@ -106,45 +105,81 @@ async function ghFetch(path: string): Promise<unknown> {
 }
 
 /**
- * Fetches the user's recent activity (last ~90 days, capped at 300 events
- * by GitHub) and reduces it to per-day commit counts. This is the data that
- * powers the sparkline. PushEvents are expanded so each commit inside a push
- * is counted individually.
+ * Fetches commit activity across all tracked repos for the last N days,
+ * bucketed by date. Walks each repo's default-branch commit history via
+ * /repos/{owner}/{repo}/commits — more accurate than the events feed,
+ * which has a recency bias and prunes data older than ~30-45 days.
  *
- * Repo content is NOT included in the return value here — only counts and
- * dates. This is safe to render for any visitor regardless of which repos
- * are private.
+ * Filters to commits authored by `username` so co-authored or collaborator
+ * commits in shared repos don't inflate the chart.
+ *
+ * Like the events-based version, this returns counts and dates only —
+ * no commit content. Safe to render regardless of repo visibility.
  */
+
 export async function getCommitActivity(
   username: string,
   days = 90,
 ): Promise<ActivityPoint[]> {
   const buckets = new Map<string, number>();
-  const cutoff = Date.now() - days * 24 * 60 * 60 * 1000;
+  const seenShas = new Set<string>();
+  const cutoffMs = Date.now() - days * 24 * 60 * 60 * 1000;
+  const since = new Date(cutoffMs).toISOString();
 
-  try {
-    const path = TOKEN
-      ? `/users/${username}/events?per_page=100`
-      : `/users/${username}/events/public?per_page=100`;
-    const events = (await ghFetch(path)) as GitHubEvent[];
-
-    for (const event of events) {
-      if (event.type !== 'PushEvent') continue;
-      const ts = Date.parse(event.created_at);
-      if (Number.isNaN(ts) || ts < cutoff) continue;
-
-      const day = event.created_at.slice(0, 10);
-      // Each PushEvent counts as one push. The /users/{u}/events endpoint
-      // does not include the commits array (the /public variant does), so
-      // counting individual commits would require an extra API call per
-      // event. Treating a push as the unit of activity is simpler and the
-      // signal value is the same for "is this person actively building."
-      buckets.set(day, (buckets.get(day) ?? 0) + 1);
-    }
-  } catch (err) {
-    console.warn('[github] getCommitActivity failed:', err);
-    return [];
+  // Step 1: discover all owned repos. Paginate up to 5 pages (500 repos).
+  // Filter out archived, forks, and repos with no recent activity.
+  let allRepos: Array<{ full_name: string; archived: boolean; fork: boolean; pushed_at: string }> = [];
+  for (let page = 1; page <= 5; page++) {
+    const repos = (await ghFetch(
+      `/user/repos?affiliation=owner,collaborator,organization_member&per_page=100&page=${page}&sort=pushed`,
+    )) as Array<{ full_name: string; archived: boolean; fork: boolean; pushed_at: string }>;
+    allRepos = allRepos.concat(repos);
+    if (repos.length < 100) break;
   }
+
+  const activeRepos = allRepos.filter(
+    (r) =>
+      !r.archived &&
+      !r.fork &&
+      Date.parse(r.pushed_at) >= cutoffMs,
+  );
+
+  console.log(
+    `[github] Scanning ${activeRepos.length} active repos (out of ${allRepos.length} owned)`,
+  );
+
+  // Step 2: for each active repo, list branches and walk commits per branch.
+  // Two levels of parallelism: repos in parallel, branches within repo in parallel.
+  await Promise.all(
+    activeRepos.map(async (repo) => {
+      try {
+        const branches = (await ghFetch(
+          `/repos/${repo.full_name}/branches?per_page=100`,
+        )) as { name: string }[];
+
+        await Promise.all(
+         branches.map(async (branch) => {
+            for (let page = 1; page <= 5; page++) {
+              const commits = (await ghFetch(
+                `/repos/${repo.full_name}/commits?sha=${encodeURIComponent(branch.name)}&since=${since}&author=${username}&per_page=100&page=${page}`,
+              )) as GitHubCommit[];
+
+              for (const commit of commits) {
+                if (seenShas.has(commit.sha)) continue;
+                seenShas.add(commit.sha);
+                const day = commit.commit.author.date.slice(0, 10);
+                buckets.set(day, (buckets.get(day) ?? 0) + 1);
+              }
+
+              if (commits.length < 100) break;
+            }
+          }),
+        );
+      } catch (err) {
+        console.warn(`[github] getCommitActivity failed for ${repo.full_name}:`, err);
+      }
+    }),
+  );
 
   const points: ActivityPoint[] = [];
   for (let i = days - 1; i >= 0; i--) {
@@ -152,6 +187,15 @@ export async function getCommitActivity(
     const key = d.toISOString().slice(0, 10);
     points.push({ date: key, count: buckets.get(key) ?? 0 });
   }
+
+  console.log(
+    '[github] Commit activity:',
+    points.reduce((sum, p) => sum + p.count, 0),
+    'unique commits across',
+    activeRepos.length,
+    'active repos (all branches)',
+  );
+
   return points;
 }
 

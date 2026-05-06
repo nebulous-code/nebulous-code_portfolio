@@ -1,94 +1,210 @@
 ---
 /**
- * Project card.
+ * ProjectCard — the most important component on the site.
  *
- * Renders different secondary links based on the project's `visibility`:
- *   - 'public'       → Live demo (if any) + Code link
- *   - 'private-saas' → Live product link, no code link
- *   - 'private-wip'  → Minimal — name + tagline only, no links
+ * Composes Eyebrow, Badge, KpiGrid, KpiCell, Sparkline, and Button into
+ * the project-card pattern from DESIGN.md §5.
  *
- * Also handles the case where `lastCommitMessage` is null (either because
- * the repo isn't allowlisted, or because the fetch failed). When there's no
- * message, we fall back to a neutral "Last update: <date>" line so the card
- * still feels alive.
+ * Status is auto-derived from last-commit recency:
+ *   pushed in the last 30 days -> active (green)
+ *   older or never pushed       -> idle (ink-muted)
+ *
+ * Several KPI cells show em-dashes for now (latest release, commits 30d,
+ * open prs). Those data sources will land in M4. The card is structurally
+ * complete; only the values are placeholders.
  */
 
+import Eyebrow from './Eyebrow.astro';
+import Badge from './Badge.astro';
+import KpiGrid from './KpiGrid.astro';
+import KpiCell from './KpiCell.astro';
+import Sparkline from './Sparkline.astro';
 import type { ProjectConfig } from '~/config/projects';
 import type { ProjectActivity } from '~/lib/github';
 
 interface Props {
   project: ProjectConfig;
   activity?: ProjectActivity | undefined;
+  sparkline?: { date: string; count: number }[];
 }
 
-const { project, activity } = Astro.props;
+const { project, activity, sparkline = [] } = Astro.props;
 
+// Derive last-update label.
 const lastUpdateLabel = (() => {
-  if (!activity?.lastCommitDate) return null;
-  const d = new Date(activity.lastCommitDate);
-  const days = Math.round((Date.now() - d.getTime()) / (24 * 60 * 60 * 1000));
-  if (days === 0) return 'Updated today';
-  if (days === 1) return 'Updated yesterday';
-  if (days < 30) return `Updated ${days} days ago`;
-  if (days < 365) return `Updated ${Math.round(days / 30)} months ago`;
-  return `Updated ${Math.round(days / 365)} years ago`;
+  if (!activity?.lastCommitDate) return '—';
+  const days = Math.round(
+    (Date.now() - new Date(activity.lastCommitDate).getTime()) / (24 * 60 * 60 * 1000),
+  );
+  if (days === 0) return 'today';
+  if (days === 1) return '1d ago';
+  if (days < 30) return `${days}d ago`;
+  if (days < 365) return `${Math.round(days / 30)}mo ago`;
+  return `${Math.round(days / 365)}y ago`;
 })();
 
-const showCommitMessage =
-  project.visibility === 'public' && activity?.lastCommitMessage;
+// Auto-derive active/idle status from last-commit recency.
+const daysSinceCommit = activity?.lastCommitDate
+  ? Math.round(
+      (Date.now() - new Date(activity.lastCommitDate).getTime()) /
+        (24 * 60 * 60 * 1000),
+    )
+  : Infinity;
+const isActive = daysSinceCommit <= 30;
+const statusLabel = isActive ? 'active' : 'idle';
+const statusTone = isActive ? 'green' : 'ink';
+
+// Eyebrow content: "PROJECT · ACTIVE" or "PROJECT · IDLE"
+const eyebrowText = `project · ${statusLabel}`;
 ---
 
-<article
-  class="rounded-lg border p-6"
-  style="border-color: var(--color-border); background: var(--color-surface)"
->
-  <h3 class="mb-1 text-lg font-semibold">
-    <a href={`/projects/${project.slug}`}>{project.name}</a>
-  </h3>
-  <p class="mb-4 text-sm" style="color: var(--color-text-dim)">{project.tagline}</p>
+<article class="project-card">
+  <header class="card-header">
+    <div class="title-block">
+      <Eyebrow>{eyebrowText}</Eyebrow>
+      <h3 class="title">
+        <a href={`/projects/${project.slug}`}>{project.name}</a>
+      </h3>
+    </div>
+    <Badge tone={statusTone}>{statusLabel}</Badge>
+  </header>
 
-  {
-    showCommitMessage && (
-      <p class="mb-3 font-mono text-xs" style="color: var(--color-text-dim)">
-        <span style="color: var(--color-accent)">›</span>{' '}
-        {activity!.lastCommitMessage}
-      </p>
-    )
-  }
+  <p class="description">{project.tagline}</p>
 
-  {
-    lastUpdateLabel && (
-      <p class="mb-4 text-xs" style="color: var(--color-text-dim)">
-        {lastUpdateLabel}
-      </p>
-    )
-  }
+  <KpiGrid columns={4}>
+    <KpiCell
+      label="last push"
+      tone={isActive && daysSinceCommit < 7 ? 'orange' : 'ink'}
+    >
+      {lastUpdateLabel}
+    </KpiCell>
+    <KpiCell label="latest release">—</KpiCell>
+    <KpiCell label="commits 30d">—</KpiCell>
+    <KpiCell label="open prs">—</KpiCell>
+  </KpiGrid>
 
-  <div class="flex flex-wrap gap-3 text-sm">
-    <a href={`/projects/${project.slug}`}>Case study →</a>
-
-    {
-      project.liveDemoUrl && (
-        <a href={project.liveDemoUrl} target="_blank" rel="noopener">
-          Live demo →
+  <footer class="card-footer">
+    <div class="sparkline-block">
+      <Eyebrow>activity</Eyebrow>
+      <Sparkline points={sparkline} unit="commits" width={120} height={20} />
+    </div>
+    <div class="actions">
+      <a class="action-link primary" href={`/projects/${project.slug}` }>
+        case study →
+      </a>
+      {project.visibility === 'public' ? (
+    
+        <a class="action-link secondary"
+          href={`https://github.com/${project.repo}`}
+          target="_blank"
+          rel="noopener"
+        >
+          code →
         </a>
-      )
-    }
-
-    {
-      project.visibility === 'public' && (
-        <a href={`https://github.com/${project.repo}`} target="_blank" rel="noopener">
-          Code →
-        </a>
-      )
-    }
-
-    {
-      project.visibility === 'private-saas' && project.productUrl && (
-        <a href={project.productUrl} target="_blank" rel="noopener">
-          Visit product →
-        </a>
-      )
-    }
+      ) : null}
+      {project.visibility === 'private-saas' && project.productUrl ? (
+    
+        <a class="action-link primary"
+          href={project.productUrl}
+          target="_blank"
+          rel="noopener"
+        >
+        visit product →
+      </a>
+    ) : null}
   </div>
+      </footer>
 </article>
+
+<style>
+  .project-card {
+    background: var(--color-bg-raised);
+    border: 1px solid var(--color-line);
+    border-radius: var(--radius-lg);
+    padding: var(--space-8);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-6);
+  }
+
+  .card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: var(--space-5);
+  }
+
+  .title-block {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+    min-width: 0;
+  }
+
+  .title {
+    font-family: var(--font-serif);
+    font-size: 22px;
+    line-height: 1.2;
+    font-weight: 500;
+    letter-spacing: -0.01em;
+    margin: 0;
+  }
+
+  .title a {
+    color: var(--color-ink);
+    text-decoration: none;
+  }
+
+  .title a:hover {
+    color: var(--color-blue);
+  }
+
+  .description {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    line-height: 1.5;
+    color: var(--color-ink-muted);
+    margin: 0;
+  }
+
+  .card-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    gap: var(--space-5);
+    margin-top: var(--space-2);
+  }
+
+  .sparkline-block {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+    min-width: 0;
+  }
+
+  .actions {
+    display: flex;
+    gap: var(--space-5);
+    align-items: center;
+    white-space: nowrap;
+  }
+
+  .action-link {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    text-decoration: none;
+    letter-spacing: 0.02em;
+  }
+
+  .action-link.primary {
+    color: var(--color-blue);
+  }
+
+  .action-link.secondary {
+    color: var(--color-ink-muted);
+  }
+
+  .action-link:hover {
+    text-decoration: underline;
+  }
+</style>
