@@ -22,6 +22,12 @@ const { title, description = 'Nicholas — software developer.' } = Astro.props;
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="description" content={description} />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+        rel="stylesheet"
+          href="https://fonts.googleapis.com/css2?family=Departure+Mono&family=Recursive:slnt,CASL,MONO,wght@-15..0,0..1,0..1,400..600&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,500;0,8..60,600;1,8..60,400&display=swap"
+    />
     <title>{title}</title>
   </head>
   <body>
@@ -38,7 +44,7 @@ const { title, description = 'Nicholas — software developer.' } = Astro.props;
       <main>
         <slot />
       </main>
-      <footer class="mt-24 border-t border-[var(--color-border)] pt-6 text-sm" style="color: var(--color-text-dim)">
+      <footer class="mt-24 border-t border-[var(--color-line)] pt-6 text-sm" style="color: var(--color-ink-faint)">
         <p>© {new Date().getFullYear()} Nicholas · nebulouscode.com</p>
       </footer>
     </div>
