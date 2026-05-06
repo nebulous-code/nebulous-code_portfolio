@@ -18,6 +18,9 @@ import ActivitySparkline from '~/components/ActivitySparkline.astro';
 import { getFeaturedProjects } from '~/config/projects';
 import { getCommitActivity, getProjectActivity } from '~/lib/github';
 
+import Button from '~/components/Button.astro';
+import Sparkline from '~/components/Sparkline.astro';
+
 const GITHUB_USERNAME = 'nebulous-code';
 
 // Build-time data fetch. Each function is fault-tolerant — a failed fetch
@@ -32,6 +35,48 @@ const activityByRepo = new Map(projectActivity.map((p) => [p.repo, p]));
 ---
 
 <BaseLayout title="nebulous-code">
+  <div style="display: flex; gap: 1rem; align-items: center;">
+  <Sparkline
+    points={[
+      { date: '2026-04-01', count: 2 },
+      { date: '2026-04-02', count: 5 },
+      { date: '2026-04-03', count: 1 },
+      { date: '2026-04-04', count: 8 },
+      { date: '2026-04-05', count: 3 },
+      { date: '2026-04-06', count: 7 },
+      { date: '2026-04-07', count: 4 },
+    ]}
+    unit="commits"
+  />
+  <Sparkline
+    points={[
+      { date: '2026-04-01', count: 2 },
+      { date: '2026-04-02', count: 5 },
+      { date: '2026-04-03', count: 1 },
+      { date: '2026-04-04', count: 8 },
+      { date: '2026-04-05', count: 3 },
+      { date: '2026-04-06', count: 7 },
+      { date: '2026-04-07', count: 4 },
+    ]}
+  />
+  <Sparkline
+    points={Array.from({ length: 7 }, (_, i) => ({
+      date: `2026-04-0${i + 1}`,
+      count: 0,
+    }))}
+  />
+  <Sparkline
+    points={[{ date: '2026-04-01', count: 5 }]}
+  />
+</div>
+  <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+    <Button variant="primary">primary</Button>
+    <Button variant="secondary">secondary</Button>
+    <Button variant="ghost">ghost</Button>
+    <Button variant="highlight">highlight</Button>
+    <Button href="/about">link as button</Button>
+    <Button href="https://github.com" target="_blank">external link</Button>
+  </div>
   <section class="mb-16">
     <h1 class="mb-3 text-4xl font-bold">Nicholas</h1>
     <p class="text-lg" style="color: var(--color-text-dim)">

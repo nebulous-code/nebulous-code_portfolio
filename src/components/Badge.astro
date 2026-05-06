@@ -1,0 +1,53 @@
+---
+/**
+ * Badge — outline-style state indicator.
+ *
+ * Color encodes state. Always pair color with a text label — never
+ * communicate state by color alone (accessibility rule from DESIGN.md §8).
+ *
+ * Usage:
+ *   <Badge tone="green">active</Badge>
+ *   <Badge tone="orange">v1.2.0</Badge>
+ *   <Badge tone="ink">archived</Badge>
+ */
+
+interface Props {
+  tone?: 'green' | 'blue' | 'orange' | 'ink';
+  class?: string;
+}
+
+const { tone = 'blue', class: className = '' } = Astro.props;
+
+const colorVar =
+  tone === 'green'
+    ? 'var(--color-green)'
+    : tone === 'orange'
+      ? 'var(--color-orange)'
+      : tone === 'ink'
+        ? 'var(--color-ink-muted)'
+        : 'var(--color-blue)';
+---
+
+<span
+  class:list={['badge', className]}
+  style={`color: ${colorVar}; border-color: ${colorVar};`}
+>
+  <slot />
+</span>
+
+<style>
+  .badge {
+    display: inline-block;
+    font-family: var(--font-mono);
+    font-size: 9px;
+    line-height: 1.4;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    font-weight: 400;
+    padding: 2px 6px;
+    border: 1px solid;
+    border-radius: var(--radius-xs);
+    background: transparent;
+    white-space: nowrap;
+  }
+</style>

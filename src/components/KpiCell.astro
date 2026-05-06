@@ -1,0 +1,60 @@
+---
+/**
+ * KpiCell — single stat cell. Eyebrow label + value.
+ *
+ * Composes inside KpiGrid (built next) but works standalone too.
+ * The cell owns its background; the grid only contributes the
+ * hairline gaps between cells.
+ *
+ * Usage:
+ *   <KpiCell label="last push" tone="orange">2d ago</KpiCell>
+ *   <KpiCell label="commits 30d">47</KpiCell>
+ *   <KpiCell label="open prs">—</KpiCell>
+ */
+
+import Eyebrow from './Eyebrow.astro';
+
+interface Props {
+  label: string;
+  tone?: 'ink' | 'green' | 'orange';
+  class?: string;
+}
+
+const { label, tone = 'ink', class: className = '' } = Astro.props;
+
+const valueColor =
+  tone === 'green'
+    ? 'var(--color-green)'
+    : tone === 'orange'
+      ? 'var(--color-orange)'
+      : 'var(--color-ink)';
+---
+
+<div class:list={['kpi-cell', className]}>
+  <Eyebrow>{label}</Eyebrow>
+  <div class="kpi-value" style={`color: ${valueColor};`}>
+    <slot />
+  </div>
+</div>
+
+<style>
+  .kpi-cell {
+    background: var(--color-bg-inset);
+    padding: var(--space-5) var(--space-6);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+    min-width: 0;
+  }
+
+  .kpi-value {
+    font-family: var(--font-mono);
+    font-size: 16px;
+    font-weight: 500;
+    line-height: 1.25;
+    font-variant-numeric: tabular-nums;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+</style>

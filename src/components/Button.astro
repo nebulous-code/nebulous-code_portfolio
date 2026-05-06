@@ -1,0 +1,111 @@
+---
+/**
+ * Button — primary action element. Renders as <button> by default,
+ * or as <a> when an href is provided.
+ *
+ * Variants:
+ *   primary    — workhorse. Blue fill, bg-colored text.
+ *   secondary  — transparent fill, ink text, line border. Default secondary action.
+ *   ghost      — no border, ink-muted text. Dismissive actions, footer links styled as buttons.
+ *   highlight  — orange fill, bg-colored text. Single most-important CTA per page only.
+ *
+ * Usage:
+ *   <Button href="/projects">case study</Button>
+ *   <Button variant="ghost">cancel</Button>
+ *   <Button variant="highlight" href="https://demo.example.com">try the demo</Button>
+ */
+
+interface Props {
+  variant?: 'primary' | 'secondary' | 'ghost' | 'highlight';
+  href?: string;
+  type?: 'button' | 'submit' | 'reset';
+  target?: string;
+  rel?: string;
+  class?: string;
+}
+
+const {
+  variant = 'secondary',
+  href,
+  type = 'button',
+  target,
+  rel,
+  class: className = '',
+} = Astro.props;
+
+const Tag = href ? 'a' : 'button';
+const tagProps = href
+  ? { href, target, rel: rel ?? (target === '_blank' ? 'noopener' : undefined) }
+  : { type };
+---
+
+<Tag class:list={['btn', `btn-${variant}`, className]} {...tagProps}>
+  <slot />
+</Tag>
+
+<style>
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    font-family: var(--font-mono);
+    font-size: 12px;
+    line-height: 1.4;
+    letter-spacing: 0.02em;
+    padding: var(--space-3) var(--space-6);
+    border-radius: var(--radius-md);
+    border: 1px solid transparent;
+    background: transparent;
+    color: var(--color-ink);
+    cursor: pointer;
+    text-decoration: none;
+    transition: background-color 120ms ease;
+    white-space: nowrap;
+  }
+
+  .btn:focus-visible {
+    outline: 2px solid var(--color-blue);
+    outline-offset: 2px;
+  }
+
+  /* Primary — blue field */
+  .btn-primary {
+    background: var(--color-blue);
+    color: var(--color-bg);
+    border-color: var(--color-blue);
+  }
+  .btn-primary:hover {
+    background: color-mix(in srgb, var(--color-blue) 94%, white 6%);
+  }
+
+  /* Secondary — outlined */
+  .btn-secondary {
+    background: transparent;
+    color: var(--color-ink);
+    border-color: var(--color-line);
+  }
+  .btn-secondary:hover {
+    background: color-mix(in srgb, var(--color-bg) 94%, white 6%);
+  }
+
+  /* Ghost — no border */
+  .btn-ghost {
+    background: transparent;
+    color: var(--color-ink-muted);
+    border-color: transparent;
+    padding-inline: var(--space-3);
+  }
+  .btn-ghost:hover {
+    background: color-mix(in srgb, var(--color-bg) 94%, white 6%);
+  }
+
+  /* Highlight — sienna, used rarely */
+  .btn-highlight {
+    background: var(--color-orange);
+    color: var(--color-bg);
+    border-color: var(--color-orange);
+  }
+  .btn-highlight:hover {
+    background: color-mix(in srgb, var(--color-orange) 94%, white 6%);
+  }
+</style>

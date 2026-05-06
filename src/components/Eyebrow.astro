@@ -1,0 +1,44 @@
+---
+/**
+ * Eyebrow — small uppercase mono label.
+ *
+ * Usage:
+ *   <Eyebrow>last push</Eyebrow>
+ *   <Eyebrow tone="muted">project · active</Eyebrow>
+ *
+ * Renders as a <span> so it composes inline. Wrap in a heading element
+ * (<h2>, etc.) at the consumer if semantic structure is needed.
+ */
+
+interface Props {
+  tone?: 'faint' | 'muted' | 'ink';
+  class?: string;
+}
+
+const { tone = 'faint', class: className = '' } = Astro.props;
+
+const colorVar =
+  tone === 'ink'
+    ? 'var(--color-ink)'
+    : tone === 'muted'
+      ? 'var(--color-ink-muted)'
+      : 'var(--color-ink-faint)';
+---
+
+<span
+  class:list={['eyebrow', className]}
+  style={`color: ${colorVar};`}
+>
+  <slot />
+</span>
+
+<style>
+  .eyebrow {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    line-height: 1.4;
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    font-weight: 400;
+  }
+</style>

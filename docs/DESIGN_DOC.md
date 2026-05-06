@@ -118,7 +118,7 @@ Three typefaces, each with a clear job. Don't blur the boundaries.
 | `lede` | 17–18px | 1.55 | Source Serif 4, 400 italic | Lede paragraphs, pull quotes, voice copy. |
 | `body` | 14px | 1.65 | Recursive Mono Casual, 400 (`MONO 1, CASL 1`) | All running prose — case-study body, descriptions, list items. |
 | `body-ui` | 13px | 1.55 | Departure Mono, 400 | Short UI strings (button labels, descriptions inside cards ≤2 lines). |
-| `kpi` | 14–18px | 1 | Departure Mono, 500 | KPI values inside cards. |
+| `kpi` | 14–18px | 1.25 | Departure Mono, 500 | KPI values inside cards. |
 | `label` | 11–12px | 1.4 | Departure Mono, 400 | Inline labels, button text, tags. |
 | `eyebrow` | 9–11px | 1.4 | Departure Mono, 400, uppercase, `0.06–0.08em` tracking | Section eyebrows, KPI keys (`LAST PUSH`). |
 | `meta` | 10–11px | 1.4 | Departure Mono, 400 | Timestamps, footer, secondary meta. |
