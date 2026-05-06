@@ -1,123 +1,153 @@
 ---
-/**
- * Home page.
- *
- * The "developer is a verb" dashboard. Three live signals here:
- *   1. Currently-building text (from src/content/now.md, hand-curated)
- *   2. Activity sparkline (from getCommitActivity, baked at build time)
- *   3. Project cards with last-update labels (from getProjectActivity)
- *
- * All GitHub data is fetched during the build via src/lib/github.ts, which
- * applies the deny-by-default sanitization rules. By the time this page is
- * rendered to static HTML, no API calls remain.
- */
-
 import BaseLayout from '~/layouts/BaseLayout.astro';
+import Eyebrow from '~/components/Eyebrow.astro';
 import ProjectCard from '~/components/ProjectCard.astro';
 import PushChart from '~/components/PushChart.astro';
+import Button from '~/components/Button.astro';
 import { getFeaturedProjects } from '~/config/projects';
 import { getCommitActivity, getProjectActivity } from '~/lib/github';
-
-import Button from '~/components/Button.astro';
-import Sparkline from '~/components/Sparkline.astro';
+import fs from 'node:fs/promises';
+import path from 'node:path';
 
 const GITHUB_USERNAME = 'nebulous-code';
 
-// Build-time data fetch. Each function is fault-tolerant — a failed fetch
-// returns an empty/degraded result rather than crashing the build.
+// Build-time data fetch.
 const [activity, projectActivity] = await Promise.all([
   getCommitActivity(GITHUB_USERNAME, 90),
   getProjectActivity(),
 ]);
+
+// Read the "currently building" hand-edited content.
+const nowPath = path.resolve('./src/content/now.md');
+const nowRaw = await fs.readFile(nowPath, 'utf-8');
+// Strip the YAML frontmatter and trim. Simple split — no parser needed.
+const nowBody = nowRaw.replace(/^---[\s\S]*?---\s*/, '').trim();
 
 const featured = getFeaturedProjects();
 const activityByRepo = new Map(projectActivity.map((p) => [p.repo, p]));
 ---
 
 <BaseLayout title="nebulous-code">
-  <div style="display: flex; gap: 1rem; align-items: center;">
-  <Sparkline
-    points={[
-      { date: '2026-04-01', count: 2 },
-      { date: '2026-04-02', count: 5 },
-      { date: '2026-04-03', count: 1 },
-      { date: '2026-04-04', count: 8 },
-      { date: '2026-04-05', count: 3 },
-      { date: '2026-04-06', count: 7 },
-      { date: '2026-04-07', count: 4 },
-    ]}
-    unit="commits"
-  />
-  <Sparkline
-    points={[
-      { date: '2026-04-01', count: 2 },
-      { date: '2026-04-02', count: 5 },
-      { date: '2026-04-03', count: 1 },
-      { date: '2026-04-04', count: 8 },
-      { date: '2026-04-05', count: 3 },
-      { date: '2026-04-06', count: 7 },
-      { date: '2026-04-07', count: 4 },
-    ]}
-  />
-  <Sparkline
-    points={Array.from({ length: 7 }, (_, i) => ({
-      date: `2026-04-0${i + 1}`,
-      count: 0,
-    }))}
-  />
-  <Sparkline
-    points={[{ date: '2026-04-01', count: 5 }]}
-  />
-</div>
-  <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
-    <Button variant="primary">primary</Button>
-    <Button variant="secondary">secondary</Button>
-    <Button variant="ghost">ghost</Button>
-    <Button variant="highlight">highlight</Button>
-    <Button href="/about">link as button</Button>
-    <Button href="https://github.com" target="_blank">external link</Button>
-  </div>
-  <section class="mb-16">
-    <h1 class="mb-3 text-4xl font-bold">Nicholas</h1>
-    <p class="text-lg" style="color: var(--color-text-dim)">
-      Full-stack developer with a decade of experience and a soft spot for reporting,
-      data pipelines, and tools that make other developers faster.
-    </p>
-  </section>
+  <div class="container-wide">
+    <section class="hero">
+      <h1 class="display">Nicholas Licalsi </h1>
+      <p class="lede">
+        Full-stack developer with a decade of experience and a soft spot for
+        reporting, data pipelines, and the tools that make other developers
+        faster.
+      </p>
+      <div class="hero-actions">
+        <Button href="/projects">see projects →</Button>
+        <Button variant="ghost" href="/about">about me</Button>
+      </div>
+    </section>
 
-  <section class="mb-12">
-    <h2 class="mb-4 text-sm font-semibold uppercase tracking-wider" style="color: var(--color-text-dim)">
-      Recent Activity
-    </h2>
-    <PushChart points={activity} />
-  </section>
+    <section class="section">
+      <Eyebrow>recent activity</Eyebrow>
+      <div class="section-body">
+        <PushChart points={activity} unit="commits" />
+      </div>
+    </section>
 
-  <section class="mb-16">
-    <h2 class="mb-4 text-sm font-semibold uppercase tracking-wider" style="color: var(--color-text-dim)">
-      Currently Building
-    </h2>
-    {/*
-      TODO slice 5: read this from src/content/now.md properly via a content
-      collection. For slice 1 we just hardcode a placeholder so the page renders.
-    */}
-    <p>
-      Working on the <strong>Pokémon Card Market Intelligence Dashboard</strong> —
-      recently shipped a Magikarp-themed dark UI and price distribution charts.
-      Also drilling OLL algorithms in <strong>Cube Practice</strong> and
-      sketching out a Game Boy emulator as the next deep dive.
-    </p>
-  </section>
+    <section class="section">
+      <Eyebrow>currently building</Eyebrow>
+      <div class="section-body">
+        <p class="now-text" set:html={nowBody.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')}></p>
+      </div>
+    </section>
 
-  <section>
-    <h2 class="mb-4 text-sm font-semibold uppercase tracking-wider" style="color: var(--color-text-dim)">
-      Projects
-    </h2>
-    <div class="grid gap-4">
-      {
-        featured.map((project) => (
+    <section class="section">
+      <Eyebrow>projects</Eyebrow>
+      <div class="section-body project-grid">
+        {featured.map((project) => (
           <ProjectCard project={project} activity={activityByRepo.get(project.repo)} />
-        ))
-      }
-    </div>
-  </section>
+        ))}
+      </div>
+    </section>
+  </div>
 </BaseLayout>
+
+<style>
+  /* ───── Hero ───── */
+  .hero {
+    padding-block: var(--space-9) var(--space-11);
+  }
+
+  .display {
+    font-family: var(--font-serif);
+    font-size: 48px;
+    line-height: 1.1;
+    font-weight: 500;
+    letter-spacing: -0.01em;
+    margin: 0 0 var(--space-7) 0;
+    color: var(--color-ink);
+  }
+
+  .lede {
+    font-family: var(--font-serif);
+    font-style: italic;
+    font-size: 18px;
+    line-height: 1.55;
+    color: var(--color-ink-muted);
+    margin: 0 0 var(--space-9) 0;
+    max-width: 640px;
+  }
+
+  .hero-actions {
+    display: flex;
+    gap: var(--space-5);
+    align-items: center;
+  }
+
+  /* ───── Section pattern ───── */
+  .section {
+    padding-block: var(--space-9);
+    border-top: 1px solid var(--color-line);
+  }
+
+  .section-body {
+    margin-top: var(--space-7);
+  }
+
+  /* ───── Currently Building ───── */
+  .now-text {
+    font-family: var(--font-body);
+    font-variation-settings: "MONO" 1, "CASL" 1, "wght" 400;
+    font-size: 14px;
+    line-height: 1.65;
+    color: var(--color-ink);
+    margin: 0;
+    max-width: 640px;
+  }
+
+  .now-text :global(strong) {
+    font-variation-settings: "MONO" 1, "CASL" 1, "wght" 500;
+    color: var(--color-ink);
+  }
+
+  /* ───── Project grid ───── */
+  .project-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: var(--space-7);
+  }
+
+  @media (min-width: 800px) {
+    .project-grid {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+
+  /* ───── Mobile ───── */
+  @media (max-width: 640px) {
+    .display {
+      font-size: 36px;
+    }
+    .lede {
+      font-size: 16px;
+    }
+    .hero-actions {
+      flex-wrap: wrap;
+    }
+  }
+</style>

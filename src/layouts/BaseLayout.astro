@@ -1,9 +1,18 @@
 ---
 /**
- * Base layout used by all pages.
+ * BaseLayout — the shell every page inherits.
  *
- * Slice 1 keeps this minimal — just nav, header, footer, and a content slot.
- * Real design comes in slice 3 after the design handoff.
+ * Provides:
+ *   - Sticky top nav with active-page indicator and "last deployed" status
+ *   - Minimal footer
+ *   - <html> chrome, font links, meta
+ *   - No imposed content width — pages opt into .container-wide or
+ *     .container-narrow themselves so case studies can use a different
+ *     width than the home page.
+ *
+ * Build-time stamps:
+ *   import.meta.env.BUILD_TIME — ISO string, set via astro.config.mjs.
+ *   Used in the nav status block so visitors see how fresh the site is.
  */
 
 import '~/styles/global.css';
@@ -14,6 +23,34 @@ interface Props {
 }
 
 const { title, description = 'Nicholas — software developer.' } = Astro.props;
+
+// Active-page indicator. Compare current path against nav routes.
+const path = Astro.url.pathname;
+const navItems = [
+  { href: '/', label: 'home' },
+  { href: '/projects', label: 'projects' },
+  { href: '/about', label: 'about' },
+  { href: '/resume', label: 'resume' },
+  { href: '/contact', label: 'contact' },
+];
+const isActive = (href: string) => {
+  if (href === '/') return path === '/';
+  return path === href || path.startsWith(`${href}/`);
+};
+
+// "Last deployed" — relative time.
+const buildTime = import.meta.env.BUILD_TIME ?? new Date().toISOString();
+const buildDate = new Date(buildTime);
+const buildAgo = (() => {
+  const ms = Date.now() - buildDate.getTime();
+  const mins = Math.round(ms / 60000);
+  if (mins < 1) return 'just now';
+  if (mins < 60) return `${mins}m ago`;
+  const hours = Math.round(mins / 60);
+  if (hours < 24) return `${hours}h ago`;
+  const days = Math.round(hours / 24);
+  return `${days}d ago`;
+})();
 ---
 
 <!doctype html>
@@ -22,31 +59,200 @@ const { title, description = 'Nicholas — software developer.' } = Astro.props;
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="description" content={description} />
+    <title>{title}</title>
+
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
-        rel="stylesheet"
-          href="https://fonts.googleapis.com/css2?family=Departure+Mono&family=Recursive:slnt,CASL,MONO,wght@-15..0,0..1,0..1,400..600&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,500;0,8..60,600;1,8..60,400&display=swap"
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Departure+Mono&family=Recursive:slnt,CASL,MONO,wght@-15..0,0..1,0..1,400..600&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,500;0,8..60,600;1,8..60,400&display=swap"
     />
-    <title>{title}</title>
   </head>
   <body>
-    <div class="mx-auto max-w-3xl px-6 py-8">
-      <header class="mb-12 flex items-center justify-between">
-        <a href="/" class="font-mono text-lg">nebulous-code</a>
-        <nav class="flex gap-6 text-sm">
-          <a href="/projects">Projects</a>
-          <a href="/about">About</a>
-          <a href="/resume">Resume</a>
-          <a href="/contact">Contact</a>
-        </nav>
-      </header>
-      <main>
-        <slot />
-      </main>
-      <footer class="mt-24 border-t border-[var(--color-line)] pt-6 text-sm" style="color: var(--color-ink-faint)">
-        <p>© {new Date().getFullYear()} Nicholas · nebulouscode.com</p>
-      </footer>
-    </div>
+    <nav class="site-nav">
+      <div class="nav-inner">
+        <a href="/" class="brand">nebulous-code</a>
+
+        <ul class="nav-links">
+          {
+            navItems.map((item) => (
+              <li>
+                
+                <a
+                  href={item.href}
+                  class:list={['nav-link', { active: isActive(item.href) }]}
+                >
+                  {item.label}
+                </a>
+              </li>
+            ))
+          }
+        </ul>
+
+        <div class="status-block">
+          <span class="status-dot" aria-hidden="true"></span>
+          <span class="status-text">deployed {buildAgo}</span>
+        </div>
+      </div>
+    </nav>
+
+    <main class="site-main">
+      <slot />
+    </main>
+
+    <footer class="site-footer">
+      <div class="footer-inner">
+        <span>© {new Date().getFullYear()} Nicholas</span>
+        <a href="https://github.com/nebulous-code" target="_blank" rel="noopener">
+          github →
+        </a>
+      </div>
+    </footer>
+
+    <style>
+      /* ───── Container utilities ───── */
+      :global(.container-wide) {
+        max-width: 1100px;
+        margin-inline: auto;
+        padding-inline: var(--space-8);
+      }
+      :global(.container-narrow) {
+        max-width: 720px;
+        margin-inline: auto;
+        padding-inline: var(--space-8);
+      }
+
+      /* ───── Site nav ───── */
+      .site-nav {
+        position: sticky;
+        top: 0;
+        z-index: 10;
+        background: color-mix(in srgb, var(--color-bg) 92%, transparent);
+        backdrop-filter: blur(8px);
+        border-bottom: 1px solid var(--color-line);
+      }
+
+      .nav-inner {
+        max-width: 1100px;
+        margin-inline: auto;
+        padding: var(--space-5) var(--space-8);
+        display: flex;
+        align-items: center;
+        gap: var(--space-9);
+      }
+
+      .brand {
+        font-family: var(--font-mono);
+        font-size: 13px;
+        color: var(--color-ink);
+        text-decoration: none;
+        letter-spacing: 0.02em;
+      }
+
+      .brand:hover {
+        color: var(--color-blue);
+        text-decoration: none;
+      }
+
+      .nav-links {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+        display: flex;
+        gap: var(--space-7);
+        flex: 1;
+      }
+
+      .nav-link {
+        font-family: var(--font-mono);
+        font-size: 12px;
+        color: var(--color-ink-muted);
+        text-decoration: none;
+        letter-spacing: 0.02em;
+        padding-bottom: 2px;
+        border-bottom: 1px solid transparent;
+        transition: color 120ms ease, border-color 120ms ease;
+      }
+
+      .nav-link:hover {
+        color: var(--color-ink);
+        text-decoration: none;
+      }
+
+      .nav-link.active {
+        color: var(--color-blue);
+        border-bottom-color: var(--color-blue);
+      }
+
+      .status-block {
+        display: flex;
+        align-items: center;
+        gap: var(--space-2);
+        font-family: var(--font-mono);
+        font-size: 10px;
+        color: var(--color-ink-faint);
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+      }
+
+      .status-dot {
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        background: var(--color-green);
+      }
+
+      /* ───── Main ───── */
+      .site-main {
+        padding-block: var(--space-11);
+        min-height: calc(100vh - 200px);
+      }
+
+      /* ───── Footer ───── */
+      .site-footer {
+        border-top: 1px solid var(--color-line);
+        padding-block: var(--space-7);
+        margin-top: var(--space-11);
+      }
+
+      .footer-inner {
+        max-width: 1100px;
+        margin-inline: auto;
+        padding-inline: var(--space-8);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        font-family: var(--font-mono);
+        font-size: 11px;
+        color: var(--color-ink-faint);
+      }
+
+      .footer-inner a {
+        color: var(--color-ink-muted);
+        text-decoration: none;
+      }
+
+      .footer-inner a:hover {
+        color: var(--color-blue);
+      }
+
+      /* ───── Mobile ───── */
+      @media (max-width: 640px) {
+        .nav-inner {
+          gap: var(--space-5);
+          padding-inline: var(--space-6);
+        }
+        .nav-links {
+          gap: var(--space-5);
+        }
+        .status-block {
+          display: none;
+        }
+        :global(.container-wide),
+        :global(.container-narrow) {
+          padding-inline: var(--space-6);
+        }
+      }
+    </style>
   </body>
 </html>

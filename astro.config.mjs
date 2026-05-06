@@ -10,6 +10,9 @@ export default defineConfig({
   integrations: [vue(), mdx()],
   vite: {
     plugins: [tailwindcss()],
+    define: {
+      'import.meta.env.BUILD_TIME': JSON.stringify(new Date().toISOString()),
+    },
   },
   // Static output is the default in Astro 5; declared here for clarity.
   output: 'static',
