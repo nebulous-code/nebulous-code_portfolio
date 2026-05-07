@@ -1,6 +1,7 @@
 ---
 import BaseLayout from '~/layouts/BaseLayout.astro';
 import Eyebrow from '~/components/Eyebrow.astro';
+import Logo from '~/components/Logo.astro';
 import ProjectCard from '~/components/ProjectCard.astro';
 import PushChart from '~/components/PushChart.astro';
 import Button from '~/components/Button.astro';
@@ -30,6 +31,7 @@ const activityByRepo = new Map(projectActivity.map((p) => [p.repo, p]));
 <BaseLayout title="nebulous-code">
   <div class="container-wide">
     <section class="hero">
+      <Logo size={72} ariaLabel="nebulous-code" class="hero-logo" />
       <h1 class="display">Nicholas Licalsi </h1>
       <p class="lede">
         Full-stack developer with a decade of experience and a soft spot for
@@ -71,6 +73,10 @@ const activityByRepo = new Map(projectActivity.map((p) => [p.repo, p]));
   /* ───── Hero ───── */
   .hero {
     padding-block: var(--space-9) var(--space-11);
+  }
+
+  .hero :global(.hero-logo) {
+    margin-bottom: var(--space-7);
   }
 
   .display {

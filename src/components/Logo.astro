@@ -1,0 +1,54 @@
+---
+/**
+ * Logo — pre-rendered {nl} brand mark.
+ *
+ * Uses raster PNGs from /public/png/. The PNGs were generated with
+ * Departure Mono via canvas, so glyph metrics are baked in. Inline SVG
+ * was tried first but suffered intermittent clipping: while Departure
+ * Mono loads from Google Fonts, the SVG renders with ui-monospace,
+ * whose glyphs are wider and overflow the 100x100 viewBox.
+ *
+ * Trade-off: brand colors (#2c5475 deep blue, #a8542e burnt sienna) are
+ * locked into the raster. They match the design tokens already, so this
+ * is purely a cosmetic concern if the tokens ever change.
+ *
+ * Usage:
+ *   <Logo size={22} />
+ *   <Logo size={72} ariaLabel="nebulous-code" />
+ */
+
+interface Props {
+  size?: number;
+  ariaLabel?: string;
+  class?: string;
+}
+
+const { size = 24, ariaLabel, class: className = '' } = Astro.props;
+
+// Pick a source PNG roughly 2x the display size for retina sharpness.
+// Available sizes: 16, 32, 48, 64, 96, 128, 180, 192, 256, 384, 512.
+const PNG_SIZES = [16, 32, 48, 64, 96, 128, 192, 256, 384, 512];
+const target = size * 2;
+const srcSize = PNG_SIZES.find((s) => s >= target) ?? 512;
+const src = `/png/logo-${srcSize}.png`;
+---
+
+<img
+  src={src}
+  width={size}
+  height={size}
+  alt={ariaLabel ?? ''}
+  role={ariaLabel ? 'img' : 'presentation'}
+  aria-hidden={ariaLabel ? undefined : 'true'}
+  class:list={['logo', className]}
+  decoding="async"
+  loading="eager"
+/>
+
+<style>
+  .logo {
+    display: inline-block;
+    vertical-align: middle;
+    flex-shrink: 0;
+  }
+</style>
