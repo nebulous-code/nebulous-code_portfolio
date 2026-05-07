@@ -83,17 +83,22 @@ Outline:
 
 **Goal:** replace placeholder styles with a real design system. The site should look like the dashboard-feeling vibe we're aiming for, not a template.
 
-Outline:
-
-- Write a design spec (`docs/design-spec.md` probably) for Claude design covering:
-  - Design tokens: color palette (dark only), type scale, spacing scale, radii, shadow rules
-  - Component inventory: project card states, sparkline styling, case study layout, navigation
-  - "Dashboard-feeling" reference notes: real dashboards to draw from, anti-patterns to avoid
-  - Accessibility constraints (contrast minimums, focus states, motion)
-- Hand off to Claude design
-- Implement the resulting tokens in `src/styles/global.css` (Tailwind v4 `@theme` block)
-- Apply tokens across components, replacing all inline styles
-- Iterate until the home page reads as "deliberate engineer" not "tailwind defaults"
+- [x] Write design spec (`docs/DESIGN_DOC.md`)
+- [x] Implement tokens in `src/styles/global.css` (Tailwind v4 `@theme` block)
+- [x] Atoms + composites: Eyebrow, Badge, KpiCell, KpiGrid, Button, Sparkline, PushChart, ProjectCard
+- [x] Home page styled
+- [x] Slice D — page layouts
+  - [x] D1 `/projects` index (hero + project grid)
+  - [x] D2 `/projects/[slug]` case study (header, MDX in `<Prose>`, footer)
+  - [x] D3 `/about` (header + prose body)
+  - [x] D4 `/resume` (header + PDF download placeholder + prose body)
+  - [x] D5 `/contact` (header + KpiGrid with link cells)
+- [x] Slice E — polish
+  - [x] E1 hover/focus states (global `a:focus-visible` outline added; nav inherits)
+  - [x] E2 a11y (`aria-current="page"` on active nav, single `<h1>` per page, no skipped levels)
+  - [x] E3 transitions audit (only `background-color`/`color` 120ms ease — no transforms)
+  - [x] E5 don't-do-these audit (palette closed; no shadows/gradients; only Departure Mono for chrome and `<code>`; Recursive prose stays MONO 1 CASL 1)
+- [ ] E4 Lighthouse smoke test — needs to be run by user in Chrome devtools (cannot run headless from agent). Targets: 95+ across the four categories.
 
 ---
 

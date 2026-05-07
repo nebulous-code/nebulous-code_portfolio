@@ -81,6 +81,7 @@ const buildAgo = (() => {
                 <a
                   href={item.href}
                   class:list={['nav-link', { active: isActive(item.href) }]}
+                  aria-current={isActive(item.href) ? 'page' : undefined}
                 >
                   {item.label}
                 </a>

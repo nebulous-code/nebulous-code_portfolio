@@ -1,16 +1,94 @@
 ---
 import BaseLayout from '~/layouts/BaseLayout.astro';
+import Button from '~/components/Button.astro';
+import Prose from '~/components/Prose.astro';
 ---
 
 <BaseLayout title="Resume — nebulous-code">
-  <h1 class="mb-6 text-3xl font-bold">Resume</h1>
+  <div class="container-narrow">
+    <header class="page-header">
+      <p class="eyebrow">RESUME</p>
+      <h1 class="display">Resume</h1>
+      <p class="lede">
+        The short version, structured. The long version is in the projects.
+      </p>
 
-  <p class="mb-8">
-    {/* TODO slice 5: HTML resume + PDF download link */}
-    <em>Resume coming soon — for now, the projects page tells the story.</em>
-  </p>
+      {/* TODO M5: real PDF lands here. /resume.pdf will 404 until then. */}
+      <div class="actions">
+        <Button variant="secondary" href="/resume.pdf">download PDF →</Button>
+      </div>
+    </header>
 
-  <p>
-    <a href="/projects">See projects →</a>
-  </p>
+    <hr class="divider" />
+
+    <div class="body">
+      <Prose>
+        <p><em>HTML resume coming in M5. The PDF download will land at the same time.</em></p>
+        <p>For now, the projects page tells the story.</p>
+        <p><a href="/projects">See projects →</a></p>
+      </Prose>
+    </div>
+  </div>
 </BaseLayout>
+
+<style>
+  .page-header {
+    padding-block: var(--space-9) var(--space-10);
+  }
+
+  .eyebrow {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    line-height: 1.4;
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    color: var(--color-ink-faint);
+    margin: 0 0 var(--space-6) 0;
+  }
+
+  .display {
+    font-family: var(--font-serif);
+    font-size: 44px;
+    line-height: 1.1;
+    font-weight: 500;
+    letter-spacing: -0.01em;
+    margin: 0 0 var(--space-6) 0;
+    color: var(--color-ink);
+  }
+
+  .lede {
+    font-family: var(--font-serif);
+    font-style: italic;
+    font-size: 18px;
+    line-height: 1.55;
+    color: var(--color-ink-muted);
+    margin: 0 0 var(--space-7) 0;
+    max-width: 640px;
+  }
+
+  .actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-5);
+    align-items: center;
+  }
+
+  .divider {
+    border: 0;
+    border-top: 1px solid var(--color-line);
+    margin: 0;
+  }
+
+  .body {
+    padding-block: var(--space-10);
+  }
+
+  @media (max-width: 640px) {
+    .display {
+      font-size: 32px;
+    }
+    .lede {
+      font-size: 16px;
+    }
+  }
+</style>

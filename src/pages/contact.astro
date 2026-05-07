@@ -1,19 +1,119 @@
 ---
 import BaseLayout from '~/layouts/BaseLayout.astro';
+import KpiGrid from '~/components/KpiGrid.astro';
+import KpiCell from '~/components/KpiCell.astro';
+
+// TODO M5: replace placeholder addresses/handles.
+const EMAIL = 'hello@nebulouscode.com';
+const GITHUB_URL = 'https://github.com/nebulous-code';
+const GITHUB_HANDLE = '@nebulous-code';
+// TODO M5: real LinkedIn URL.
+const LINKEDIN_URL = '#';
+const LINKEDIN_HANDLE = 'linkedin';
 ---
 
 <BaseLayout title="Contact — nebulous-code">
-  <h1 class="mb-6 text-3xl font-bold">Contact</h1>
+  <div class="container-narrow">
+    <header class="page-header">
+      <p class="eyebrow">CONTACT</p>
+      <h1 class="display">Contact</h1>
+      <p class="lede">
+        The fastest way to reach me is email. I'm also on GitHub and
+        occasionally LinkedIn.
+      </p>
+    </header>
 
-  <p class="mb-6">
-    The fastest way to reach me is email. I'm also active on GitHub and
-    occasionally on LinkedIn.
-  </p>
+    <hr class="divider" />
 
-  <ul class="space-y-2">
-    {/* TODO slice 5: real email and social links */}
-    <li>Email: <a href="mailto:hello@nebulouscode.com">hello@nebulouscode.com</a></li>
-    <li>GitHub: <a href="https://github.com/nebulous-code" target="_blank" rel="noopener">@nebulous-code</a></li>
-    <li>LinkedIn: <a href="#" target="_blank" rel="noopener">TODO</a></li>
-  </ul>
+    <div class="body">
+      <div class="contact-grid">
+        <KpiGrid columns={3}>
+          <KpiCell label="email">
+            <a class="cell-link" href={`mailto:${EMAIL}`}>{EMAIL}</a>
+          </KpiCell>
+          <KpiCell label="github">
+            <a class="cell-link" href={GITHUB_URL} target="_blank" rel="noopener">
+              {GITHUB_HANDLE}
+            </a>
+          </KpiCell>
+          <KpiCell label="linkedin">
+            <a class="cell-link" href={LINKEDIN_URL} target="_blank" rel="noopener">
+              {LINKEDIN_HANDLE}
+            </a>
+          </KpiCell>
+        </KpiGrid>
+      </div>
+    </div>
+  </div>
 </BaseLayout>
+
+<style>
+  .page-header {
+    padding-block: var(--space-9) var(--space-10);
+  }
+
+  .eyebrow {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    line-height: 1.4;
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    color: var(--color-ink-faint);
+    margin: 0 0 var(--space-6) 0;
+  }
+
+  .display {
+    font-family: var(--font-serif);
+    font-size: 44px;
+    line-height: 1.1;
+    font-weight: 500;
+    letter-spacing: -0.01em;
+    margin: 0 0 var(--space-6) 0;
+    color: var(--color-ink);
+  }
+
+  .lede {
+    font-family: var(--font-serif);
+    font-style: italic;
+    font-size: 18px;
+    line-height: 1.55;
+    color: var(--color-ink-muted);
+    margin: 0;
+    max-width: 640px;
+  }
+
+  .divider {
+    border: 0;
+    border-top: 1px solid var(--color-line);
+    margin: 0;
+  }
+
+  .body {
+    padding-block: var(--space-10);
+  }
+
+  .cell-link {
+    color: var(--color-blue);
+    text-decoration: none;
+  }
+
+  .cell-link:hover {
+    text-decoration: underline;
+  }
+
+  /*
+   * KpiGrid sets grid-template-columns inline; override on mobile so the
+   * three cells stack into one column instead of squishing.
+   */
+  @media (max-width: 640px) {
+    .contact-grid :global(.kpi-grid) {
+      grid-template-columns: 1fr !important;
+    }
+    .display {
+      font-size: 32px;
+    }
+    .lede {
+      font-size: 16px;
+    }
+  }
+</style>

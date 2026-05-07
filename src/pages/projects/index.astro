@@ -4,25 +4,84 @@ import ProjectCard from '~/components/ProjectCard.astro';
 import { getFeaturedProjects } from '~/config/projects';
 import { getProjectActivity } from '~/lib/github';
 
-const featured = getFeaturedProjects();
+const projects = getFeaturedProjects();
 const projectActivity = await getProjectActivity();
 const activityByRepo = new Map(projectActivity.map((p) => [p.repo, p]));
 ---
 
 <BaseLayout title="Projects — nebulous-code">
-  <h1 class="mb-6 text-3xl font-bold">Projects</h1>
-  <p class="mb-8" style="color: var(--color-text-dim)">
-    Things I've built. Each one has a longer case study with the decisions,
-    the dead ends, and what I'd do differently.
-  </p>
+  <div class="container-wide">
+    <section class="hero">
+      <h1 class="display">Projects</h1>
+      <p class="lede">
+        Things I've built. Each has a longer case study with the decisions,
+        the dead ends, and what I'd do differently.
+      </p>
+    </section>
 
-  {/* TODO slice 5: tag-based filter UI (probably a small Vue island) */}
+    {/* TODO M5: tag filter (small Vue island) */}
 
-  <div class="grid gap-4">
-    {
-      featured.map((project) => (
-        <ProjectCard project={project} activity={activityByRepo.get(project.repo)} />
-      ))
-    }
+    <section class="section">
+      <div class="project-grid">
+        {projects.map((project) => (
+          <ProjectCard
+            project={project}
+            activity={activityByRepo.get(project.repo)}
+          />
+        ))}
+      </div>
+    </section>
   </div>
 </BaseLayout>
+
+<style>
+  .hero {
+    padding-block: var(--space-9) var(--space-11);
+  }
+
+  .display {
+    font-family: var(--font-serif);
+    font-size: 48px;
+    line-height: 1.1;
+    font-weight: 500;
+    letter-spacing: -0.01em;
+    margin: 0 0 var(--space-7) 0;
+    color: var(--color-ink);
+  }
+
+  .lede {
+    font-family: var(--font-serif);
+    font-style: italic;
+    font-size: 18px;
+    line-height: 1.55;
+    color: var(--color-ink-muted);
+    margin: 0;
+    max-width: 640px;
+  }
+
+  .section {
+    padding-block: var(--space-10);
+    border-top: 1px solid var(--color-line);
+  }
+
+  .project-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: var(--space-7);
+  }
+
+  @media (min-width: 800px) {
+    .project-grid {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+
+  @media (max-width: 640px) {
+    .display {
+      font-size: 36px;
+    }
+    .lede {
+      font-size: 16px;
+    }
+  }
+</style>
