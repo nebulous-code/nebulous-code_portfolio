@@ -98,7 +98,7 @@ Outline:
   - [x] E2 a11y (`aria-current="page"` on active nav, single `<h1>` per page, no skipped levels)
   - [x] E3 transitions audit (only `background-color`/`color` 120ms ease — no transforms)
   - [x] E5 don't-do-these audit (palette closed; no shadows/gradients; only Departure Mono for chrome and `<code>`; Recursive prose stays MONO 1 CASL 1)
-- [ ] E4 Lighthouse smoke test — needs to be run by user in Chrome devtools (cannot run headless from agent). Targets: 95+ across the four categories.
+- [x] E4 Lighthouse smoke test — accepted scores: 100 on /about, /resume, /projects, /projects/[slug]; 87 on /; 71 on /contact. Lower scores attributed to Google Fonts swap dominating LCP on light-content pages; not worth fixing for a portfolio.
 
 ---
 
