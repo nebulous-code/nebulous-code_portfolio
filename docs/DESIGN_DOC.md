@@ -52,6 +52,7 @@ All colors below are the canonical hex values. Use these names as CSS custom pro
 | `blue-deep` | `#2c5475` | Blue fill at lower contrast. Selected states, secondary chart series. |
 | `green` | `#6e8a5d` | Moss. The "active / shipping / healthy" color. Live indicators, in-progress badges, success states, "Currently Building" highlights. |
 | `green-deep` | `#2d3d28` | Moss fill. Deep success backgrounds, filled-state accents. |
+| `green-text` | `#789665` | Moss lightened until it clears 4.5:1 on `bg-raised`. Use whenever moss has to be *readable copy* rather than a fill or a mark — `green` itself is only 3.9:1 at body size. Same hue and saturation, brighter only. |
 | `orange` | `#a8542e` | Burnt sienna. The "highlight / release / latest" color. Latest-day chart bar, version tags, callouts, hover states on certain links. |
 | `orange-deep` | `#5c2c17` | Sienna fill. Filled buttons (rare), highlighted card backgrounds. |
 
@@ -158,13 +159,38 @@ Don't use them. The system is flat. If something needs to "lift," raise its surf
 
 ## 5. Component patterns
 
-### Buttons
+### Calls to action
 
-- **Primary:** `bg: blue`, `color: bg` (the Prussian — readable on harbor blue), `border: 1px solid blue`, `padding: 8px 14px`, mono font, `font-size: 12`, `letter-spacing: 0.02em`, `border-radius: 4px`.
-- **Secondary:** transparent fill, `color: ink`, `border: 1px solid line`. Same padding.
-- **Ghost:** transparent, `color: ink-muted`, no border. For dismissive actions.
-- **Highlight (rare):** `bg: orange`, `color: bg`. Use for a single most-important call-to-action per page — never two on a screen.
-- Hover: increase background lightness ~6%; never change hue. Don't animate transforms — just `background-color 120ms`.
+**This site has no buttons.** Every call to action is a text link — no fill, no border, no padding box. That is a deliberate rule, not an omission. The system is flat and painted; a raised affordance has nothing to rise from, and a page of outlined boxes reads as a form rather than a portfolio.
+
+- **Shape:** Departure Mono 12px, `letter-spacing: 0.02em`, no underline at rest, trailing ` →`.
+- **Primary:** `color: blue`. The action you actually want taken.
+- **Secondary:** `color: ink-muted`. Available, but not the pitch.
+- **Hover:** underline. No color shift, no background, no transform.
+- **Focus:** the global `a:focus-visible` ring covers every one of them, because they are all anchors.
+- **Size:** 12px in dense contexts — card footers, summary page nav rows. **18px when the call to action sits in a page header or hero**, matching the lede directly above it; at 12px it gets dwarfed by an 18px italic summary. Steps down to 16px with the lede below 640px.
+
+One component owns this: `src/components/ActionLink.astro`. It appends the arrow and adds `target="_blank" rel="noopener"` to off-site hrefs, so neither can be forgotten at a call site.
+
+**The arrow is the tell.** A trailing `→` means "this navigates somewhere," and it is what marks an element as a call to action. Links that are *not* calls to action never carry one:
+
+- inline links inside running prose
+- project card titles (they shift color instead)
+- contact channel values in the KPI grid
+- the back link `← all projects`, whose leading arrow means return, and which brightens rather than underlining
+
+**Forbidden**
+
+- Outlined buttons. Filled buttons. Anything `<button>`-shaped used for navigation.
+- A call to action without an arrow, or an arrow on a link that doesn't navigate.
+
+### Page header (every page)
+
+Eyebrow, title, lede, optional actions row, then a 1px `line` rule. One component: `src/components/PageHeader.astro`. There are no size variants — one type scale across every page, regardless of container width.
+
+The eyebrow is a **freshness stamp** wherever the page has hand-written content that can go stale: `last updated: August 2026`, formatted by `src/lib/dates.ts` so the wording and format can't drift. Pages whose content is derived rather than written (contact) carry no eyebrow at all. The projects listing derives its stamp from the most recent summary, so it re-dates itself.
+
+Format dates in **UTC**. These are date-only values that parse as UTC midnight; formatting them locally renders the previous day west of Greenwich, and at a month boundary names the wrong month outright.
 
 ### Badges / tags
 
@@ -192,9 +218,13 @@ A grid of small stat cells. The pattern:
 
 ### Sparklines (per-project)
 
-- 1px stroke, `green` for commit-frequency over time.
-- Terminal end-cap: 2px filled circle in the same color.
+- **Bars, not a stroke.** 13 weekly buckets across ~90 days, in `green`.
+- Opacity scales with count. Empty weeks keep a faint tick (0.18) so the timeline reads continuous rather than truncated.
+- Scales to its own maximum. Cards show their own rhythm and are deliberately *not* comparable to each other — the KPI cells carry the absolute numbers.
+- Hidden entirely, eyebrow label included, when every bucket is zero. Thirteen empty buckets under a label reads as broken, not as idle.
 - No axis, no gridlines, no labels.
+
+A 1px stroke with a terminal end-cap was the original spec, and it was built. Real commit data killed it: the work here is bursty — a handful of active days separated by long gaps — so at 120px wide a polyline rendered each burst as a one-pixel needle on a flat line. Bars survive sparse data; strokes don't. Weekly buckets rather than daily for the same reason: 91 daily bars at that width are sub-pixel.
 
 ### Inputs
 
@@ -205,10 +235,17 @@ A grid of small stat cells. The pattern:
 ### Cards (project pattern)
 
 The project card is the system's most important component. Structure:
-1. Eyebrow + title row: eyebrow ("PROJECT · ACTIVE") in `ink-faint`, title in Source Serif 4. Status badge (top-right) in the relevant accent.
+1. Eyebrow + title row: eyebrow ("project · active") in `ink-faint`, title in Source Serif 4. Status badge (top-right) in the relevant accent.
 2. Description: 1–2 lines, mono 12px, `ink-muted`.
-3. KPI grid: 3–4 cells (last push, latest release, commits 30d, open PRs).
-4. Footer row: sparkline on the left with eyebrow label, action links on the right (`case study →` in blue, `code →` in `ink-muted`).
+3. Language row: up to three dominant languages, middle-dot separated, lowercase, mono 11px, `green-text`.
+4. KPI grid: 4 cells — last push, latest release, total commits, commits 30d.
+5. Footer row: activity chart on the left under an eyebrow label, calls to action on the right — `project summary →` in `ink-muted`, the live link in blue, in that order so the primary action lands on the far edge.
+
+**Code is deliberately absent from the card.** It lives on the project summary page instead. The interesting thing is the built product and the writeup; source is the audit trail, and it earns its place two clicks in rather than on the pitch.
+
+**A cell only exists if it can be populated.** "Open PRs" was specified here and cut after it read `0` on every card — a row of zeros reads deader than a dash, because a dash says "not applicable" while a zero says "nothing is happening." Check the real data before adding a cell.
+
+**Languages carry a 12% floor** and a cap of three. Without a floor the row fills with build output and stray config; the floor is set where it is because a flagship project's second language sat at 14.7%.
 
 ---
 
@@ -245,6 +282,7 @@ Not strictly visual, but the design depends on copy holding its end up.
   --color-blue-deep:  #2c5475;
   --color-green:      #6e8a5d;
   --color-green-deep: #2d3d28;
+  --color-green-text: #789665;
   --color-orange:     #a8542e;
   --color-orange-deep:#5c2c17;
 
@@ -323,7 +361,9 @@ h1, h2, h3, .display, .lede {
 - `ink-muted` on `bg`: ≈ 5.8:1. AA for body, AAA for large text. Don't use for body below 14px.
 - `ink-faint` on `bg`: ≈ 2.4:1. Below AA. Reserved for non-essential meta — never use it for actionable text.
 - `blue` on `bg`: ≈ 5.6:1. AA for body — fine for links and button labels.
-- `green` on `bg`: ≈ 4.7:1. AA for large text only — don't use moss for body-size text on the page background. It's a fill/badge color, not a copy color.
+- `green` on `bg`: ≈ 4.7:1. AA for large text only — don't use moss for body-size text on the page background. It's a fill/badge color, not a copy color. On `bg-raised` (inside a card) it drops to 3.9:1, which is below AA for text but still clears the 3:1 floor WCAG applies to non-text graphics — which is why the activity bars may be `green` while the language row beside them must not.
+- `green-text` on `bg-raised`: ≈ 4.5:1. This is the moss to use when the thing is *copy*. Reach for it rather than shrinking or bolding `green` into compliance.
+- Measure, don't estimate. Every ratio in this section was computed against the actual token pair, not eyeballed. A color that looks fine on a card can be a point-and-a-half short.
 - `orange` on `bg`: ≈ 4.1:1. Borderline AA large. Treat as a marker color, not a text color. If you must set type in `orange`, make it ≥14px and 500 weight.
 - Never communicate state with color alone. The active badge is `green` *and* says "active." The latest push bar is `orange` *and* sits at the rightmost position.
 
@@ -334,6 +374,9 @@ h1, h2, h3, .display, .lede {
 - Pure black `#000` or pure white `#fff` anywhere.
 - Gradients on surfaces, buttons, or text.
 - Box shadows. Anywhere.
+- Outlined or filled buttons. Calls to action are text links with a trailing arrow — see §5.
+- An arrow on a link that doesn't navigate, or a call to action without one.
+- A KPI cell, badge, or chart that has no data to show. Hide it, or don't build it.
 - Adding a fifth color (red, purple, teal, yellow) — the palette is closed.
 - Emoji as functional UI.
 - JetBrains Mono, Inter, Roboto, or system-ui as body font. The brand fonts are the brand.
@@ -351,18 +394,29 @@ h1, h2, h3, .display, .lede {
 ```
 src/
   styles/
-    tokens.css       # the :root block above
-    base.css         # reset + html/body defaults + font imports
+    global.css           # Tailwind v4 @theme block — the tokens above
   components/
-    PushChart.vue    # signature data viz
-    ProjectCard.astro
-    KpiGrid.astro
+    ActionLink.astro     # the one call-to-action treatment
     Badge.astro
-    Sparkline.vue
-    Button.astro
+    Eyebrow.astro
+    KpiCell.astro
+    KpiGrid.astro
+    Logo.astro
+    PageHeader.astro     # eyebrow / title / lede / actions / rule
+    ProjectCard.astro    # the system's most important component
+    ProjectLinks.astro   # back link + outbound links on a summary page
+    Prose.astro          # running-prose styles for MDX and static copy
+    PushChart.astro      # signature 90-day site-wide chart
+    Sparkline.astro      # compact per-project weekly bars
   layouts/
-    Default.astro    # <html> shell, font links, top nav
+    BaseLayout.astro     # <html> shell, font links, sticky nav, footer
+  lib/
+    dates.ts             # freshness-stamp wording and format
 ```
 
-Vue components are reserved for anything interactive or data-driven (charts, sparklines, filters). Static content (cards, badges, layouts) stays in Astro.
+**Everything is Astro. The site ships zero JavaScript files.** An earlier version of this doc reserved Vue for "anything interactive or data-driven"; nothing ever needed it, and the integration was emitting a 70 kB runtime chunk that no page referenced. Charts are static inline SVG rendered at build time.
+
+The one exception is a ~700-byte inline script in `BaseLayout.astro` that converts the baked build timestamp into a relative "deployed 3h ago" label. It's inline rather than bundled precisely so it doesn't reintroduce a JS request — it is smaller than the round trip would cost.
+
+If something genuinely needs a framework later, add it back deliberately. Don't assume it's already there.
 

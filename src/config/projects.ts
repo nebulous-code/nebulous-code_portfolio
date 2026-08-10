@@ -78,9 +78,10 @@ export type ProjectVisibility = 'public' | 'private-saas' | 'private-wip';
  */
 export type ProjectLinkKind = 'demo' | 'product';
 
+/** No arrow here — ActionLink appends it, so baking one in would double up. */
 const PROJECT_LINK_LABELS: Record<ProjectLinkKind, string> = {
-  demo: 'live demo →',
-  product: 'visit product →',
+  demo: 'live demo',
+  product: 'visit product',
 };
 
 export interface ProjectConfig {

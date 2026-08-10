@@ -97,7 +97,7 @@ a:hover {
 
 /*
  * Focus-visible only — mouse users don't see a ring, keyboard users do.
- * 2px blue outline at 2px offset matches the Button component.
+ * Every call to action on this site is an <a>, so this covers all of them.
  */
 a:focus-visible,
 button:focus-visible,

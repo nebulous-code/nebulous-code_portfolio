@@ -17,6 +17,7 @@
  * no matching PROJECTS entry.
  */
 
+import ActionLink from './ActionLink.astro';
 import { getLiveLink } from '~/config/projects';
 import type { ProjectConfig } from '~/config/projects';
 
@@ -37,16 +38,8 @@ const codeUrl =
   <a class="back-link" href="/projects">← all projects</a>
 
   <div class="project-links">
-    {codeUrl ? (
-      <a class="action-link muted" href={codeUrl} target="_blank" rel="noopener">
-        code →
-      </a>
-    ) : null}
-    {liveLink ? (
-      <a class="action-link" href={liveLink.href} target="_blank" rel="noopener">
-        {liveLink.label}
-      </a>
-    ) : null}
+    {codeUrl ? <ActionLink href={codeUrl} tone="muted">code</ActionLink> : null}
+    {liveLink ? <ActionLink href={liveLink.href}>{liveLink.label}</ActionLink> : null}
   </div>
 </div>
 
@@ -85,21 +78,4 @@ const codeUrl =
     text-decoration: none;
   }
 
-  .action-link {
-    font-family: var(--font-mono);
-    font-size: 12px;
-    color: var(--color-blue);
-    text-decoration: none;
-    letter-spacing: 0.02em;
-  }
-
-  /* Code is the audit-it-if-you-care action, so it reads quieter than the
-     link that takes you to the working thing. */
-  .action-link.muted {
-    color: var(--color-ink-muted);
-  }
-
-  .action-link:hover {
-    text-decoration: underline;
-  }
 </style>

@@ -1,6 +1,6 @@
 ---
 import BaseLayout from '~/layouts/BaseLayout.astro';
-import Button from '~/components/Button.astro';
+import ActionLink from '~/components/ActionLink.astro';
 import PageHeader from '~/components/PageHeader.astro';
 import Prose from '~/components/Prose.astro';
 
@@ -15,14 +15,17 @@ const LAST_UPDATED = new Date('2026-08-10');
       title="Resume"
       lede="The short version, structured. The long version is in the projects."
     >
-      <Button variant="secondary" href="/resume.pdf">download PDF →</Button>
+      <ActionLink href="/resume.pdf" size="large">download PDF</ActionLink>
     </PageHeader>
 
     <div class="body">
       <Prose>
         <p>For now, the projects page tells the story.</p>
-        <p><a href="/projects">See projects →</a></p>
       </Prose>
+
+      <div class="page-cta">
+        <ActionLink href="/projects">see projects</ActionLink>
+      </div>
     </div>
   </div>
 </BaseLayout>
@@ -30,5 +33,11 @@ const LAST_UPDATED = new Date('2026-08-10');
 <style>
   .body {
     padding-block: var(--space-10);
+  }
+
+  /* Sits outside <Prose> so it reads as a call to action rather than another
+     sentence — prose links are a different thing and carry no arrow. */
+  .page-cta {
+    margin-top: var(--space-9);
   }
 </style>

@@ -1,0 +1,89 @@
+---
+/**
+ * ActionLink — the site's single call-to-action treatment.
+ *
+ * A deliberate rule for this site: calls to action are mono text links with a
+ * trailing arrow. They are never outlined or filled. Inline links inside prose
+ * are a different thing entirely — they carry no arrow and don't use this.
+ *
+ * `tone` follows the project cards, which set the precedent: blue is the
+ * primary action, grey is the secondary one.
+ *
+ * The arrow is appended here rather than typed at each call site, so it can't
+ * go missing — it already had on the hero's "about me" link.
+ *
+ * Off-site hrefs get target/rel automatically, so a new tab can't ship without
+ * noopener because someone forgot.
+ *
+ * Usage:
+ *   <ActionLink href="/projects">see projects</ActionLink>
+ *   <ActionLink href={repoUrl} tone="muted">code</ActionLink>
+ */
+
+interface Props {
+  href: string;
+  tone?: 'primary' | 'muted';
+  /**
+   * 'large' matches the lede beside it, for calls to action that sit in a
+   * page header or hero. At the default 12px they get dwarfed by the 18px
+   * italic summary directly above them.
+   */
+  size?: 'default' | 'large';
+  class?: string;
+}
+
+const {
+  href,
+  tone = 'primary',
+  size = 'default',
+  class: className = '',
+} = Astro.props;
+
+const isExternal = /^https?:\/\//.test(href);
+const externalAttrs = isExternal
+  ? { target: '_blank', rel: 'noopener' }
+  : {};
+---
+
+<a
+  href={href}
+  class:list={['action-link', tone, { large: size === 'large' }, className]}
+  {...externalAttrs}
+>
+  <slot /> →
+</a>
+
+<style>
+  .action-link {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    line-height: 1.4;
+    letter-spacing: 0.02em;
+    text-decoration: none;
+    white-space: nowrap;
+  }
+
+  .action-link.primary {
+    color: var(--color-blue);
+  }
+
+  .action-link.muted {
+    color: var(--color-ink-muted);
+  }
+
+  /* Matches the lede's size so a hero CTA holds its own beside it, and steps
+     down with the lede on mobile. */
+  .action-link.large {
+    font-size: 18px;
+  }
+
+  .action-link:hover {
+    text-decoration: underline;
+  }
+
+  @media (max-width: 640px) {
+    .action-link.large {
+      font-size: 16px;
+    }
+  }
+</style>

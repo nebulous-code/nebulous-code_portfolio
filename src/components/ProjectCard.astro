@@ -2,8 +2,8 @@
 /**
  * ProjectCard — the most important component on the site.
  *
- * Composes Eyebrow, Badge, KpiGrid, KpiCell, Sparkline, and Button into
- * the project-card pattern from DESIGN.md §5.
+ * Composes Eyebrow, Badge, KpiGrid, KpiCell, Sparkline, and ActionLink into
+ * the project-card pattern from DESIGN_DOC §5.
  *
  * Status is auto-derived from last-commit recency:
  *   pushed in the last 30 days -> active (green)
@@ -14,6 +14,7 @@
  * complete; only the values are placeholders.
  */
 
+import ActionLink from './ActionLink.astro';
 import Eyebrow from './Eyebrow.astro';
 import Badge from './Badge.astro';
 import KpiGrid from './KpiGrid.astro';
@@ -123,17 +124,9 @@ const eyebrowText = `project · ${statusLabel}`;
       </div>
     ) : null}
     <div class="actions">
-      <a class="action-link secondary" href={`/projects/${project.slug}`}>
-        project summary →
-      </a>
+      <ActionLink href={`/projects/${project.slug}`} tone="muted">project summary</ActionLink>
       {liveLink ? (
-        <a class="action-link primary"
-          href={liveLink.href}
-          target="_blank"
-          rel="noopener"
-        >
-          {liveLink.label}
-        </a>
+        <ActionLink href={liveLink.href}>{liveLink.label}</ActionLink>
       ) : null}
     </div>
   </footer>
@@ -226,22 +219,4 @@ const eyebrowText = `project · ${statusLabel}`;
     margin-left: auto;
   }
 
-  .action-link {
-    font-family: var(--font-mono);
-    font-size: 12px;
-    text-decoration: none;
-    letter-spacing: 0.02em;
-  }
-
-  .action-link.primary {
-    color: var(--color-blue);
-  }
-
-  .action-link.secondary {
-    color: var(--color-ink-muted);
-  }
-
-  .action-link:hover {
-    text-decoration: underline;
-  }
 </style>

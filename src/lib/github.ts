@@ -89,9 +89,100 @@ function ghHeaders(): Record<string, string> {
   return headers;
 }
 
+/*
+ * Rate limiting.
+ *
+ * GitHub signals two different limits the same way — 403 or 429 — and a plain
+ * 403 can also just mean "no permission", so the status alone can't be trusted.
+ * The headers disambiguate: `retry-after` for a secondary limit, or
+ * `x-ratelimit-remaining: 0` plus `x-ratelimit-reset` for a primary one.
+ *
+ * A short wait is worth sleeping through. A long one isn't: a primary limit
+ * can be most of an hour away, and blocking a static build that long is worse
+ * than shipping the degraded data every function here already produces. So the
+ * long case trips a breaker and the rest of the build stops calling the API
+ * entirely — GitHub's docs warn that continuing to hammer a limit risks the
+ * integration being banned, and a build fans out enough requests to matter.
+ */
+
+const MAX_RETRY_WAIT_MS = 60_000;
+const MAX_RETRIES = 1;
+
+/** Epoch ms until which we know we're limited. 0 means "not limited". */
+let rateLimitedUntil = 0;
+
+/**
+ * How long to wait before this request could succeed, or null if the response
+ * isn't a rate-limit response at all.
+ *
+ * Exported for testing — it's pure, and the header combinations are fiddly
+ * enough to be worth exercising directly.
+ */
+export function rateLimitWaitMs(res: {
+  status: number;
+  headers: { get(name: string): string | null };
+}): number | null {
+  if (res.status !== 403 && res.status !== 429) return null;
+
+  // Secondary limit: GitHub tells us exactly how long to hold off.
+  const retryAfter = Number(res.headers.get('retry-after'));
+  if (Number.isFinite(retryAfter) && res.headers.get('retry-after') !== null) {
+    return Math.max(0, retryAfter * 1000);
+  }
+
+  // Primary limit: the quota is spent until the reset timestamp.
+  if (res.headers.get('x-ratelimit-remaining') === '0') {
+    const reset = Number(res.headers.get('x-ratelimit-reset'));
+    if (Number.isFinite(reset)) return Math.max(0, reset * 1000 - Date.now());
+  }
+
+  // A 403 with neither signal is a permissions problem, not a rate limit.
+  return null;
+}
+
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+/**
+ * Single entry point for every request in this file. Retries a short rate
+ * limit, trips the breaker on a long one, and otherwise hands the response
+ * back untouched for the caller to interpret.
+ */
+async function ghRequest(path: string): Promise<Response> {
+  for (let attempt = 0; ; attempt++) {
+    const remaining = rateLimitedUntil - Date.now();
+    if (remaining > 0) {
+      throw new Error(
+        `GitHub rate limited for another ${Math.ceil(remaining / 1000)}s; skipped ${path}`,
+      );
+    }
+
+    const res = await fetch(`${GITHUB_API}${path}`, { headers: ghHeaders() });
+    const waitMs = rateLimitWaitMs(res);
+    if (waitMs === null) return res;
+
+    if (waitMs <= MAX_RETRY_WAIT_MS && attempt < MAX_RETRIES) {
+      console.warn(
+        `[github] rate limited, waiting ${Math.ceil(waitMs / 1000)}s to retry ${path}`,
+      );
+      await sleep(waitMs + 1000); // pad past the reset second
+      continue;
+    }
+
+    rateLimitedUntil = Date.now() + waitMs;
+    console.warn(
+      `[github] rate limit hit; skipping all further API calls for ${Math.ceil(
+        waitMs / 60000,
+      )}min. This build will show partial data.`,
+    );
+    throw new Error(`GitHub rate limited: ${path}`);
+  }
+}
+
 /** Returns the raw Response so callers can read pagination headers. */
 async function ghFetchRaw(path: string): Promise<Response> {
-  const res = await fetch(`${GITHUB_API}${path}`, { headers: ghHeaders() });
+  const res = await ghRequest(path);
   if (!res.ok) {
     throw new Error(`GitHub fetch failed: ${path} -> ${res.status}`);
   }
@@ -108,7 +199,7 @@ async function ghFetch(path: string): Promise<unknown> {
  * cut a release, which is the normal case here, not a failure.
  */
 async function ghFetchOrNull(path: string): Promise<unknown | null> {
-  const res = await fetch(`${GITHUB_API}${path}`, { headers: ghHeaders() });
+  const res = await ghRequest(path);
   if (res.status === 404) {
     return null;
   }

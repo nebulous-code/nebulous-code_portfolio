@@ -1,11 +1,11 @@
 ---
 import BaseLayout from '~/layouts/BaseLayout.astro';
+import ActionLink from '~/components/ActionLink.astro';
 import Eyebrow from '~/components/Eyebrow.astro';
 import Logo from '~/components/Logo.astro';
 import ProjectCard from '~/components/ProjectCard.astro';
 import Prose from '~/components/Prose.astro';
 import PushChart from '~/components/PushChart.astro';
-import Button from '~/components/Button.astro';
 import { getEntry, render } from 'astro:content';
 import { GITHUB_USERNAME, getFeaturedProjects } from '~/config/projects';
 import { getLatestProjectUpdate } from '~/lib/content';
@@ -46,8 +46,8 @@ const statsByRepo = new Map(projectStats.map((s) => [s.repo, s]));
         faster.
       </p>
       <div class="hero-actions">
-        <Button href="/projects">see projects →</Button>
-        <Button variant="ghost" href="/about">about me</Button>
+        <ActionLink href="/projects" size="large">see projects</ActionLink>
+        <ActionLink href="/about" tone="muted" size="large">about me</ActionLink>
       </div>
     </section>
 
@@ -117,7 +117,7 @@ const statsByRepo = new Map(projectStats.map((s) => [s.repo, s]));
     line-height: 1.55;
     color: var(--color-ink-muted);
     margin: 0 0 var(--space-9) 0;
-    max-width: 640px;
+    max-width: var(--measure, 640px);
   }
 
   .hero-actions {

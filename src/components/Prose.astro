@@ -37,7 +37,7 @@ const { class: className = '' } = Astro.props;
     font-size: 14px;
     line-height: 1.65;
     color: var(--color-ink);
-    max-width: 640px;
+    max-width: var(--measure, 640px);
   }
 
   /* Paragraphs */

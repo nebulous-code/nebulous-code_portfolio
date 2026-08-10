@@ -159,13 +159,24 @@ const buildAbsolute = `${buildIso.slice(0, 16).replace('T', ' ')} UTC`;
     </script>
 
     <style>
-      /* ───── Container utilities ───── */
+      /*
+       * ───── Container utilities ─────
+       *
+       * Each container also declares --measure, the reading width that ledes
+       * and prose inside it cap themselves to. A narrow page is already close
+       * to a comfortable measure, so it keeps 640px. A wide page is a
+       * dashboard — its text should line up with the charts and cards beside
+       * it, not stop halfway across. Components read var(--measure, 640px), so
+       * anything outside a container still gets a sane default.
+       */
       :global(.container-wide) {
+        --measure: 100%;
         max-width: 1100px;
         margin-inline: auto;
         padding-inline: var(--space-8);
       }
       :global(.container-narrow) {
+        --measure: 640px;
         max-width: 720px;
         margin-inline: auto;
         padding-inline: var(--space-8);
