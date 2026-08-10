@@ -65,7 +65,7 @@ html {
     "CASL" 1,   /* fully casual */
     "wght" 400, /* default weight */
     "slnt" 0,   /* upright slant */
-    "CRSV" 0,   /* No cursive forms */
+    "CRSV" 0    /* No cursive forms */
 }
 
 body {
@@ -108,7 +108,7 @@ button:focus-visible,
  * May refine these later.
  */
 h1, h2, h3, .display, .lede {
-  font-family: var(--font-serif)
+  font-family: var(--font-serif);
   font-weight: 500;
   letter-spacing: -0.01em;
   margin: 0;

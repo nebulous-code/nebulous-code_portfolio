@@ -31,11 +31,15 @@
  *                       'private-wip'  — in development, not yet shipped.
  *                                         Card shows minimal info or is hidden.
  *
- * - `tracked`         If true, this project's commits feed the activity
- *                     sparkline (count + date only). If false, the project is
- *                     completely invisible to the data pipeline.
- *                     Use false for projects you want to feature in a card but
- *                     don't want contributing to the activity graph (rare).
+ * - `tracked`         If true, this repo is queried for its most recent commit,
+ *                     which drives the "last push" KPI and the active/idle
+ *                     status on the project card. Set false to show a card with
+ *                     no freshness data (rare).
+ *                     This does NOT gate the activity sparkline. That scans
+ *                     every non-archived, non-fork repo pushed to in the last
+ *                     90 days — owned, collaborator, and org — by design, so
+ *                     work outside these projects still counts toward the
+ *                     total. See getCommitActivity in src/lib/github.ts.
  *
  * - `featured`        If true, this project appears as a card on the home page
  *                     and in the /projects index. If false, it's tracked for

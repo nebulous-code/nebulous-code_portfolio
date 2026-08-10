@@ -3,12 +3,12 @@ import BaseLayout from '~/layouts/BaseLayout.astro';
 import Eyebrow from '~/components/Eyebrow.astro';
 import Logo from '~/components/Logo.astro';
 import ProjectCard from '~/components/ProjectCard.astro';
+import Prose from '~/components/Prose.astro';
 import PushChart from '~/components/PushChart.astro';
 import Button from '~/components/Button.astro';
+import { getEntry, render } from 'astro:content';
 import { getFeaturedProjects } from '~/config/projects';
 import { getCommitActivity, getProjectActivity } from '~/lib/github';
-import fs from 'node:fs/promises';
-import path from 'node:path';
 
 const GITHUB_USERNAME = 'nebulous-code';
 
@@ -18,11 +18,11 @@ const [activity, projectActivity] = await Promise.all([
   getProjectActivity(),
 ]);
 
-// Read the "currently building" hand-edited content.
-const nowPath = path.resolve('./src/content/now.md');
-const nowRaw = await fs.readFile(nowPath, 'utf-8');
-// Strip the YAML frontmatter and trim. Simple split — no parser needed.
-const nowBody = nowRaw.replace(/^---[\s\S]*?---\s*/, '').trim();
+// The "currently building" blurb. Rendered through the markdown pipeline so
+// paragraph breaks survive — hand-parsing the frontmatter and injecting the
+// body via set:html collapsed the blank line between paragraphs.
+const nowEntry = await getEntry('now', 'now');
+const NowContent = nowEntry ? (await render(nowEntry)).Content : null;
 
 const featured = getFeaturedProjects();
 const activityByRepo = new Map(projectActivity.map((p) => [p.repo, p]));
@@ -54,7 +54,7 @@ const activityByRepo = new Map(projectActivity.map((p) => [p.repo, p]));
     <section class="section">
       <Eyebrow>currently building</Eyebrow>
       <div class="section-body">
-        <p class="now-text" set:html={nowBody.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')}></p>
+        {NowContent ? <Prose><NowContent /></Prose> : null}
       </div>
     </section>
 
@@ -113,22 +113,6 @@ const activityByRepo = new Map(projectActivity.map((p) => [p.repo, p]));
 
   .section-body {
     margin-top: var(--space-7);
-  }
-
-  /* ───── Currently Building ───── */
-  .now-text {
-    font-family: var(--font-body);
-    font-variation-settings: "MONO" 1, "CASL" 1, "wght" 400;
-    font-size: 14px;
-    line-height: 1.65;
-    color: var(--color-ink);
-    margin: 0;
-    max-width: 640px;
-  }
-
-  .now-text :global(strong) {
-    font-variation-settings: "MONO" 1, "CASL" 1, "wght" 500;
-    color: var(--color-ink);
   }
 
   /* ───── Project grid ───── */

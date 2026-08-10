@@ -93,7 +93,6 @@ const eyebrowText = `project · ${statusLabel}`;
         case study →
       </a>
       {project.visibility === 'public' ? (
-    
         <a class="action-link secondary"
           href={`https://github.com/${project.repo}`}
           target="_blank"
@@ -103,17 +102,16 @@ const eyebrowText = `project · ${statusLabel}`;
         </a>
       ) : null}
       {project.visibility === 'private-saas' && project.productUrl ? (
-    
         <a class="action-link primary"
           href={project.productUrl}
           target="_blank"
           rel="noopener"
         >
-        visit product →
-      </a>
-    ) : null}
-  </div>
-      </footer>
+          visit product →
+        </a>
+      ) : null}
+    </div>
+  </footer>
 </article>
 
 <style>

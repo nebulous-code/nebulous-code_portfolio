@@ -20,7 +20,6 @@ const {
   ariaLabel = 'recent count',
 } = Astro.props;
 
-// (math unchanged from before)
 const PAD = 2;
 const innerW = Math.max(0, width - PAD * 2);
 const innerH = Math.max(0, height - PAD * 2);
@@ -37,10 +36,6 @@ const coords = points.map((p, i) => {
 const polylinePoints = coords.map((c) => `${c.x},${c.y}`).join(' ');
 const last = coords[coords.length - 1];
 const lastPoint = points[points.length - 1];
-
-// Aggregate info for the polyline tooltip
-const total = points.reduce((sum, p) => sum + p.count, 0);
-const days = points.length;
 ---
 
 <svg

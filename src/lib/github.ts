@@ -9,9 +9,9 @@
  * Authentication:
  *   Reads from the GITHUB_TOKEN environment variable. Should be a fine-grained
  *   PAT with read access to public repos and to private repos you own. Without
- *   the token, the events endpoint can only return public events; with it,
- *   private repo events are included in the count (but their content is
- *   scrubbed by getCommitActivity unless the repo is on the content allowlist).
+ *   the token, repo discovery and commit history are limited to public repos;
+ *   with it, private and collaborator repos contribute to the activity count
+ *   too (counts only — content is gated by the allowlist rules below).
  *
  * Sanitization rules (the deny-by-default stance):
  *   - Counts and dates ALWAYS pass through, regardless of repo visibility.
@@ -37,24 +37,6 @@ import { getContentAllowlist, getTrackedRepos } from '~/config/projects';
 const GITHUB_API = 'https://api.github.com';
 const TOKEN = import.meta.env['GITHUB_TOKEN'] ?? process.env['GITHUB_TOKEN']
 
-interface GitHubEventCommit {
-  sha: string;
-  message: string;
-}
-
-interface GitHubPushEventPayload {
-  ref?: string;
-  commits?: GitHubEventCommit[];
-}
-
-interface GitHubEvent {
-  id: string;
-  type: string;
-  created_at: string;
-  repo: { name: string };
-  payload: GitHubPushEventPayload;
-}
-
 interface GitHubCommit {
   sha: string;
   commit: {
@@ -72,13 +54,6 @@ interface GitHubCommit {
 export interface ActivityPoint {
   date: string; // ISO date, YYYY-MM-DD
   count: number;
-}
-
-export interface RecentCommit {
-  date: string;
-  repoName?: string; // only present for allowlisted repos
-  message?: string; // only present for allowlisted repos
-  url?: string; // only present for allowlisted repos
 }
 
 export interface ProjectActivity {
@@ -130,11 +105,19 @@ export async function getCommitActivity(
   // Filter out archived, forks, and repos with no recent activity.
   let allRepos: Array<{ full_name: string; archived: boolean; fork: boolean; pushed_at: string }> = [];
   for (let page = 1; page <= 5; page++) {
-    const repos = (await ghFetch(
-      `/user/repos?affiliation=owner,collaborator,organization_member&per_page=100&page=${page}&sort=pushed`,
-    )) as Array<{ full_name: string; archived: boolean; fork: boolean; pushed_at: string }>;
-    allRepos = allRepos.concat(repos);
-    if (repos.length < 100) break;
+    try {
+      const repos = (await ghFetch(
+        `/user/repos?affiliation=owner,collaborator,organization_member&per_page=100&page=${page}&sort=pushed`,
+      )) as Array<{ full_name: string; archived: boolean; fork: boolean; pushed_at: string }>;
+      allRepos = allRepos.concat(repos);
+      if (repos.length < 100) break;
+    } catch (err) {
+      console.warn(`[github] repo discovery failed on page ${page}:`, err);
+      break;
+    }
+  }
+  if (allRepos.length === 0) {
+    console.warn('[github] repo discovery returned no repos - activity chart will render flat');
   }
 
   const activeRepos = allRepos.filter(
@@ -235,46 +218,4 @@ export async function getProjectActivity(): Promise<ProjectActivity[]> {
   );
 
   return results;
-}
-
-/**
- * Fetches a list of recent commits suitable for an "activity feed" display.
- * Only commits from allowlisted repos are returned. Non-allowlisted activity
- * already contributes to the sparkline; it deliberately does NOT appear here
- * because this list shows commit *content*.
- */
-export async function getRecentPublicCommits(
-  username: string,
-  limit = 10,
-): Promise<RecentCommit[]> {
-  const allowlist = getContentAllowlist();
-  const out: RecentCommit[] = [];
-
-  try {
-    const path = TOKEN
-      ? `/users/${username}/events?per_page=100`
-      : `/users/${username}/events/public?per_page=100`;
-    const events = (await ghFetch(path)) as GitHubEvent[];
-
-    for (const event of events) {
-      if (event.type !== 'PushEvent') continue;
-      if (!allowlist.has(event.repo.name)) continue;
-
-      const commits = event.payload.commits ?? [];
-      for (const c of commits) {
-        out.push({
-          date: event.created_at,
-          repoName: event.repo.name,
-          message: c.message.split('\n')[0],
-          url: `https://github.com/${event.repo.name}/commit/${c.sha}`,
-        });
-        if (out.length >= limit) return out;
-      }
-    }
-  } catch (err) {
-    console.warn('[github] getRecentPublicCommits failed:', err);
-    return [];
-  }
-
-  return out;
 }

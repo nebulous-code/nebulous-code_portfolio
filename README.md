@@ -1,6 +1,6 @@
 # nebulouscode.com
 
-Source for [nebulouscode.com](https://nebulouscode.com), my personal portfolio site. Astro 5 + Vue islands + Tailwind v4, deployed as a static site to Render, with GitHub activity data baked in at build time on a 6-hour cron.
+Source for [nebulouscode.com](https://nebulouscode.com), my personal portfolio site. Astro 5 + Tailwind v4 + MDX, deployed as a static site to Render, with GitHub activity data baked in at build time on a 6-hour cron. Ships zero JavaScript.
 
 This README focuses on how the site is built and why. For day-to-day operational notes (adding projects, deploy setup, transitions) see [`docs/MAINTENANCE.md`](docs/MAINTENANCE.md). For active work and roadmap see [`docs/TODO.md`](docs/TODO.md).
 
@@ -30,7 +30,6 @@ The site is fully static at request time — no API calls, no server runtime, no
 | Choice | Why |
 |---|---|
 | **Astro 5** | Content-heavy sites with mostly static output. Frontmatter scripts run at build time, so GitHub data is fetched once and baked into HTML. |
-| **Vue 3 islands** | Interactivity where it's actually needed (e.g., project filters), without shipping a full SPA runtime for static pages. |
 | **Tailwind v4** | CSS-based config via `@theme` blocks aligns naturally with a design-tokens approach. No JS config file. |
 | **MDX** | Case studies as long-form prose with optional embedded interactive components. |
 | **Render static** | Already used for other projects in the same portfolio, simple deploy hook for the cron-rebuild pattern. |
@@ -40,7 +39,7 @@ The site is fully static at request time — no API calls, no server runtime, no
 
 Three live signals on the home page reflect "what I'm currently working on":
 
-1. **Activity sparkline** — last 90 days of commit activity, bucketed daily. Sourced from the GitHub events feed.
+1. **Activity sparkline** — last 90 days of commit activity, bucketed daily. Walks the commit history of every non-archived, non-fork repo I've pushed to in the window (across all branches), so private and collaborator work counts toward the total.
 2. **Per-project last-update labels** — most recent default-branch commit per tracked repo.
 3. **Currently-building text** — manually curated in `src/content/now.md`.
 
@@ -56,7 +55,7 @@ This matters because the authenticated PAT used at build time can see private re
 
 ```
 .
-├── astro.config.mjs              # Astro + Vue + MDX + Tailwind v4
+├── astro.config.mjs              # Astro + MDX + Tailwind v4
 ├── render.yaml                   # Render static site config
 ├── .github/workflows/
 │   └── scheduled-rebuild.yml     # Cron + workflow_dispatch trigger
@@ -72,7 +71,7 @@ This matters because the authenticated PAT used at build time can see private re
     ├── lib/github.ts             # GitHub fetch + sanitization layer
     ├── components/
     │   ├── ProjectCard.astro     # Visibility-aware project card
-    │   └── ActivitySparkline.astro
+    │   └── PushChart.astro       # 90-day activity bar chart
     ├── layouts/BaseLayout.astro
     ├── pages/                    # Routes
     └── styles/global.css         # Tailwind + design tokens

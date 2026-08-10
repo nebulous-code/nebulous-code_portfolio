@@ -25,4 +25,16 @@ const projects = defineCollection({
   }),
 });
 
-export const collections = { projects };
+/**
+ * The "Currently Building" blurb on the home page. A single-file collection —
+ * it goes through the same markdown pipeline as the case studies so paragraph
+ * breaks, bold, and links all render properly.
+ */
+const now = defineCollection({
+  loader: glob({ pattern: 'now.md', base: './src/content' }),
+  schema: z.object({
+    updatedAt: z.coerce.date(),
+  }),
+});
+
+export const collections = { projects, now };
