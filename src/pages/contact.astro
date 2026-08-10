@@ -1,5 +1,6 @@
 ---
 import BaseLayout from '~/layouts/BaseLayout.astro';
+import PageHeader from '~/components/PageHeader.astro';
 import KpiGrid from '~/components/KpiGrid.astro';
 import KpiCell from '~/components/KpiCell.astro';
 
@@ -12,16 +13,10 @@ const LINKEDIN_HANDLE = 'licalsinj';
 
 <BaseLayout title="Contact — nebulous-code">
   <div class="container-narrow">
-    <header class="page-header">
-      <p class="eyebrow">CONTACT</p>
-      <h1 class="display">Contact</h1>
-      <p class="lede">
-        The fastest way to reach me is email. I'm also on GitHub and
-        occasionally LinkedIn.
-      </p>
-    </header>
-
-    <hr class="divider" />
+    <PageHeader
+      title="Contact"
+      lede="The fastest way to reach me is email. I'm also on GitHub and occasionally LinkedIn."
+    />
 
     <div class="body">
       <div class="contact-grid">
@@ -46,46 +41,6 @@ const LINKEDIN_HANDLE = 'licalsinj';
 </BaseLayout>
 
 <style>
-  .page-header {
-    padding-block: var(--space-9) var(--space-10);
-  }
-
-  .eyebrow {
-    font-family: var(--font-mono);
-    font-size: 11px;
-    line-height: 1.4;
-    text-transform: uppercase;
-    letter-spacing: 0.07em;
-    color: var(--color-ink-faint);
-    margin: 0 0 var(--space-6) 0;
-  }
-
-  .display {
-    font-family: var(--font-serif);
-    font-size: 44px;
-    line-height: 1.1;
-    font-weight: 500;
-    letter-spacing: -0.01em;
-    margin: 0 0 var(--space-6) 0;
-    color: var(--color-ink);
-  }
-
-  .lede {
-    font-family: var(--font-serif);
-    font-style: italic;
-    font-size: 18px;
-    line-height: 1.55;
-    color: var(--color-ink-muted);
-    margin: 0;
-    max-width: 640px;
-  }
-
-  .divider {
-    border: 0;
-    border-top: 1px solid var(--color-line);
-    margin: 0;
-  }
-
   .body {
     padding-block: var(--space-10);
   }
@@ -106,12 +61,6 @@ const LINKEDIN_HANDLE = 'licalsinj';
   @media (max-width: 640px) {
     .contact-grid :global(.kpi-grid) {
       grid-template-columns: 1fr !important;
-    }
-    .display {
-      font-size: 32px;
-    }
-    .lede {
-      font-size: 16px;
     }
   }
 </style>

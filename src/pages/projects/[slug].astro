@@ -1,10 +1,10 @@
 ---
 /**
- * Dynamic case study route.
+ * Dynamic project summary route.
  *
  * For each MDX file in src/content/projects/, this generates a static page
  * at /projects/[slug]. The page combines the MDX body (the writeup) with
- * project metadata from src/config/projects.ts (live demo URL, repo URL,
+ * project metadata from src/config/projects.ts (live URL, repo URL,
  * visibility-based affordances).
  *
  * The slug field in the MDX frontmatter MUST match a slug in PROJECTS for
@@ -12,9 +12,11 @@
  */
 
 import BaseLayout from '~/layouts/BaseLayout.astro';
+import PageHeader from '~/components/PageHeader.astro';
+import ProjectLinks from '~/components/ProjectLinks.astro';
 import Prose from '~/components/Prose.astro';
 import { getCollection, render } from 'astro:content';
-import { getLiveLink, getProjectBySlug } from '~/config/projects';
+import { getProjectBySlug } from '~/config/projects';
 
 export async function getStaticPaths() {
   const entries = await getCollection('projects');
@@ -28,46 +30,21 @@ const { entry } = Astro.props;
 const { Content } = await render(entry);
 const project = getProjectBySlug(entry.data.slug);
 
-const publishedLabel = entry.data.publishedAt.toLocaleDateString('en-US', {
-  year: 'numeric',
-  month: 'long',
-});
-
-// Same live-link resolution the card uses, so label and URL can't drift.
-// Unlike the card, this page also surfaces the repo — code is the secondary,
-// audit-it-if-you-care action, which is why it sits two clicks in.
-const liveLink = project ? getLiveLink(project) : null;
-const codeUrl =
-  project && project.visibility === 'public'
-    ? `https://github.com/${project.repo}`
-    : null;
+// Prefer the explicit updatedAt when the writeup has been revised; otherwise
+// the publish date is the last time this page was accurate.
+const lastUpdated = entry.data.updatedAt ?? entry.data.publishedAt;
 ---
 
 <BaseLayout title={`${entry.data.title} — nebulous-code`} description={entry.data.summary}>
   <div class="container-narrow">
     <article>
-      <header class="case-header">
-        <p class="meta">{publishedLabel}</p>
-        <h1 class="display">{entry.data.title}</h1>
-        <p class="lede">{entry.data.summary}</p>
-
-        {project ? (
-          <div class="actions">
-            {liveLink ? (
-              <a class="action-link" href={liveLink.href} target="_blank" rel="noopener">
-                {liveLink.label}
-              </a>
-            ) : null}
-            {codeUrl ? (
-              <a class="action-link muted" href={codeUrl} target="_blank" rel="noopener">
-                code →
-              </a>
-            ) : null}
-          </div>
-        ) : null}
-      </header>
-
-      <hr class="divider" />
+      <PageHeader
+        updated={lastUpdated}
+        title={entry.data.title}
+        lede={entry.data.summary}
+      >
+        <ProjectLinks project={project} />
+      </PageHeader>
 
       <div class="body">
         <Prose>
@@ -78,86 +55,13 @@ const codeUrl =
       <hr class="divider" />
 
       <footer class="case-footer">
-        {project ? (
-          <div class="actions">
-            {liveLink ? (
-              <a class="action-link" href={liveLink.href} target="_blank" rel="noopener">
-                {liveLink.label}
-              </a>
-            ) : null}
-            {codeUrl ? (
-              <a class="action-link muted" href={codeUrl} target="_blank" rel="noopener">
-                code →
-              </a>
-            ) : null}
-          </div>
-        ) : null}
-        <a class="back-link" href="/projects">← all projects</a>
+        <ProjectLinks project={project} />
       </footer>
     </article>
   </div>
 </BaseLayout>
 
 <style>
-  .case-header {
-    padding-block: var(--space-9) var(--space-10);
-  }
-
-  .meta {
-    font-family: var(--font-mono);
-    font-size: 11px;
-    line-height: 1.4;
-    text-transform: uppercase;
-    letter-spacing: 0.07em;
-    color: var(--color-ink-faint);
-    margin: 0 0 var(--space-6) 0;
-  }
-
-  .display {
-    font-family: var(--font-serif);
-    font-size: 44px;
-    line-height: 1.1;
-    font-weight: 500;
-    letter-spacing: -0.01em;
-    margin: 0 0 var(--space-6) 0;
-    color: var(--color-ink);
-  }
-
-  .lede {
-    font-family: var(--font-serif);
-    font-style: italic;
-    font-size: 18px;
-    line-height: 1.55;
-    color: var(--color-ink-muted);
-    margin: 0 0 var(--space-7) 0;
-    max-width: 640px;
-  }
-
-  .actions {
-    display: flex;
-    flex-wrap: wrap;
-    gap: var(--space-7);
-    align-items: center;
-  }
-
-  .action-link {
-    font-family: var(--font-mono);
-    font-size: 12px;
-    color: var(--color-blue);
-    text-decoration: none;
-    letter-spacing: 0.02em;
-  }
-
-  /* Code is the audit-it-if-you-care action, so it reads quieter than the
-     link that takes you to the working thing. */
-  .action-link.muted {
-    color: var(--color-ink-muted);
-  }
-
-  .action-link:hover {
-    text-decoration: underline;
-  }
-
   .divider {
     border: 0;
     border-top: 1px solid var(--color-line);
@@ -168,34 +72,8 @@ const codeUrl =
     padding-block: var(--space-10);
   }
 
+  /* Row layout lives in ProjectLinks; this only owns the spacing around it. */
   .case-footer {
     padding-block: var(--space-9);
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: space-between;
-    align-items: center;
-    gap: var(--space-7);
-  }
-
-  .back-link {
-    font-family: var(--font-mono);
-    font-size: 12px;
-    color: var(--color-ink-muted);
-    text-decoration: none;
-    letter-spacing: 0.02em;
-  }
-
-  .back-link:hover {
-    color: var(--color-ink);
-    text-decoration: none;
-  }
-
-  @media (max-width: 640px) {
-    .display {
-      font-size: 32px;
-    }
-    .lede {
-      font-size: 16px;
-    }
   }
 </style>

@@ -1,0 +1,105 @@
+---
+/**
+ * ProjectLinks — the navigation row on a project summary page: back to the
+ * listing on the left, outbound links on the right.
+ *
+ * Rendered twice on that page, once under the header and again in the footer,
+ * so a reader who reaches the bottom doesn't have to scroll back up. It exists
+ * as a component because those two copies were previously identical markup
+ * kept in sync by hand.
+ *
+ * Right-hand order is code then live link, so the blue primary action lands on
+ * the far right edge. The live link resolves through getLiveLink so its URL
+ * and label match the project card exactly. Code is deliberately quieter and
+ * never appears on the card — it's the audit trail, not the pitch.
+ *
+ * `project` is optional so the back link still renders for an MDX file with
+ * no matching PROJECTS entry.
+ */
+
+import { getLiveLink } from '~/config/projects';
+import type { ProjectConfig } from '~/config/projects';
+
+interface Props {
+  project?: ProjectConfig | undefined;
+}
+
+const { project } = Astro.props;
+
+const liveLink = project ? getLiveLink(project) : null;
+const codeUrl =
+  project && project.visibility === 'public'
+    ? `https://github.com/${project.repo}`
+    : null;
+---
+
+<div class="project-nav">
+  <a class="back-link" href="/projects">← all projects</a>
+
+  <div class="project-links">
+    {codeUrl ? (
+      <a class="action-link muted" href={codeUrl} target="_blank" rel="noopener">
+        code →
+      </a>
+    ) : null}
+    {liveLink ? (
+      <a class="action-link" href={liveLink.href} target="_blank" rel="noopener">
+        {liveLink.label}
+      </a>
+    ) : null}
+  </div>
+</div>
+
+<style>
+  .project-nav {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: center;
+    gap: var(--space-7);
+    width: 100%;
+  }
+
+  /* margin-left holds the links right even when the row wraps or the outbound
+     links are the only thing in it. */
+  .project-links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-7);
+    align-items: center;
+    margin-left: auto;
+  }
+
+  .back-link {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--color-ink-muted);
+    text-decoration: none;
+    letter-spacing: 0.02em;
+  }
+
+  /* Back link brightens rather than underlining, matching how it behaved
+     before it moved into this component. */
+  .back-link:hover {
+    color: var(--color-ink);
+    text-decoration: none;
+  }
+
+  .action-link {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--color-blue);
+    text-decoration: none;
+    letter-spacing: 0.02em;
+  }
+
+  /* Code is the audit-it-if-you-care action, so it reads quieter than the
+     link that takes you to the working thing. */
+  .action-link.muted {
+    color: var(--color-ink-muted);
+  }
+
+  .action-link:hover {
+    text-decoration: underline;
+  }
+</style>

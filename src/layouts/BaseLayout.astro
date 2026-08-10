@@ -34,8 +34,9 @@ const { title, description = 'Nicholas — software developer.' } = Astro.props;
 
 // Active-page indicator. Compare current path against nav routes.
 const path = Astro.url.pathname;
+// No "home" entry — the brand mark to the left of these links already goes
+// there, and two adjacent controls for the same destination is noise.
 const navItems = [
-  { href: '/', label: 'home' },
   { href: '/projects', label: 'projects' },
   { href: '/about', label: 'about' },
   { href: '/resume', label: 'resume' },
@@ -80,7 +81,12 @@ const buildAbsolute = `${buildIso.slice(0, 16).replace('T', ' ')} UTC`;
   <body>
     <nav class="site-nav">
       <div class="nav-inner">
-        <a href="/" class="brand" aria-label="nebulous-code home">
+        <a
+          href="/"
+          class="brand"
+          aria-label="nebulous-code home"
+          aria-current={isActive('/') ? 'page' : undefined}
+        >
           <Logo size={22} />
           <span class="brand-text">nebulous-code</span>
         </a>

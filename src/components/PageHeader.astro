@@ -1,0 +1,122 @@
+---
+/**
+ * PageHeader — the eyebrow / title / lede / actions block that opens every
+ * page, plus the rule that closes it.
+ *
+ * Every page used to carry its own copy of these declarations. They were
+ * identical apart from two things, both of which turned out to be accidents
+ * rather than decisions: the case study page called its eyebrow `.meta`
+ * (byte-identical declarations, different name), and /projects ran a larger
+ * display. There is now one header and one type scale.
+ *
+ * The lede's bottom margin is a :last-child rule rather than a prop, because
+ * the old per-page difference was only ever "does an actions row follow me".
+ *
+ * The trailing <hr> lives here because all five headers were followed by an
+ * identical one. Pages that need a second divider further down (the case
+ * study, below its body) still declare that themselves.
+ *
+ * Usage:
+ *   <PageHeader eyebrow="ABOUT" title="About" lede="One sentence." />
+ *   <PageHeader eyebrow="MAY 2026" title={title} lede={summary}>
+ *     <ProjectLinks project={project} />
+ *   </PageHeader>
+ */
+
+import { updatedLabel } from '~/lib/dates';
+
+interface Props {
+  eyebrow?: string;
+  /**
+   * When set, the eyebrow becomes a freshness stamp instead of a label, so a
+   * reader can judge how current the page is. Takes precedence over `eyebrow`.
+   * This is an editorial date the author sets — not a file mtime, which would
+   * bump on a typo fix and claim the content is newer than it is.
+   */
+  updated?: Date | undefined;
+  title: string;
+  lede?: string;
+  class?: string;
+}
+
+const { eyebrow, updated, title, lede, class: className = '' } = Astro.props;
+const hasActions = Astro.slots.has('default');
+
+const eyebrowText = updated ? updatedLabel(updated) : eyebrow;
+---
+
+<header class:list={['page-header', className]}>
+  {eyebrowText ? <p class="eyebrow">{eyebrowText}</p> : null}
+  <h1 class="display">{title}</h1>
+  {lede ? <p class="lede">{lede}</p> : null}
+  {hasActions ? (
+    <div class="actions">
+      <slot />
+    </div>
+  ) : null}
+</header>
+
+<hr class="divider" />
+
+<style>
+  .page-header {
+    padding-block: var(--space-9) var(--space-10);
+  }
+
+  .eyebrow {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    line-height: 1.4;
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    color: var(--color-ink-faint);
+    margin: 0 0 var(--space-6) 0;
+  }
+
+  .display {
+    font-family: var(--font-serif);
+    font-size: 44px;
+    line-height: 1.1;
+    font-weight: 500;
+    letter-spacing: -0.01em;
+    margin: 0 0 var(--space-6) 0;
+    color: var(--color-ink);
+  }
+
+  .lede {
+    font-family: var(--font-serif);
+    font-style: italic;
+    font-size: 18px;
+    line-height: 1.55;
+    color: var(--color-ink-muted);
+    margin: 0 0 var(--space-7) 0;
+    max-width: 640px;
+  }
+
+  /* Nothing below it, so nothing to space away from. */
+  .lede:last-child {
+    margin-bottom: 0;
+  }
+
+  .actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-5);
+    align-items: center;
+  }
+
+  .divider {
+    border: 0;
+    border-top: 1px solid var(--color-line);
+    margin: 0;
+  }
+
+  @media (max-width: 640px) {
+    .display {
+      font-size: 32px;
+    }
+    .lede {
+      font-size: 16px;
+    }
+  }
+</style>

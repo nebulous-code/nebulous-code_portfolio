@@ -1,20 +1,19 @@
 ---
 import BaseLayout from '~/layouts/BaseLayout.astro';
+import PageHeader from '~/components/PageHeader.astro';
 import Prose from '~/components/Prose.astro';
+
+// Bump this when the copy below actually changes.
+const LAST_UPDATED = new Date('2026-08-10');
 ---
 
 <BaseLayout title="About — nebulous-code">
   <div class="container-narrow">
-    <header class="page-header">
-      <p class="eyebrow">ABOUT</p>
-      <h1 class="display">About</h1>
-      <p class="lede">
-        I'm Nicholas — a software developer with about a decade of experience across web development, scrum/product work, and senior engineering
-        roles.
-      </p>
-    </header>
-
-    <hr class="divider" />
+    <PageHeader
+      updated={LAST_UPDATED}
+      title="About"
+      lede="I'm Nicholas — a software developer with about a decade of experience across web development, scrum/product work, and senior engineering roles."
+    />
 
     <div class="body">
       <Prose>
@@ -31,56 +30,7 @@ import Prose from '~/components/Prose.astro';
 </BaseLayout>
 
 <style>
-  .page-header {
-    padding-block: var(--space-9) var(--space-10);
-  }
-
-  .eyebrow {
-    font-family: var(--font-mono);
-    font-size: 11px;
-    line-height: 1.4;
-    text-transform: uppercase;
-    letter-spacing: 0.07em;
-    color: var(--color-ink-faint);
-    margin: 0 0 var(--space-6) 0;
-  }
-
-  .display {
-    font-family: var(--font-serif);
-    font-size: 44px;
-    line-height: 1.1;
-    font-weight: 500;
-    letter-spacing: -0.01em;
-    margin: 0 0 var(--space-6) 0;
-    color: var(--color-ink);
-  }
-
-  .lede {
-    font-family: var(--font-serif);
-    font-style: italic;
-    font-size: 18px;
-    line-height: 1.55;
-    color: var(--color-ink-muted);
-    margin: 0;
-    max-width: 640px;
-  }
-
-  .divider {
-    border: 0;
-    border-top: 1px solid var(--color-line);
-    margin: 0;
-  }
-
   .body {
     padding-block: var(--space-10);
-  }
-
-  @media (max-width: 640px) {
-    .display {
-      font-size: 32px;
-    }
-    .lede {
-      font-size: 16px;
-    }
   }
 </style>

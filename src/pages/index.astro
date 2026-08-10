@@ -8,13 +8,16 @@ import PushChart from '~/components/PushChart.astro';
 import Button from '~/components/Button.astro';
 import { getEntry, render } from 'astro:content';
 import { GITHUB_USERNAME, getFeaturedProjects } from '~/config/projects';
+import { getLatestProjectUpdate } from '~/lib/content';
+import { updatedLabel } from '~/lib/dates';
 import { getCommitActivity, getProjectActivity, getProjectStats } from '~/lib/github';
 
 // Build-time data fetch.
-const [activity, projectActivity, projectStats] = await Promise.all([
+const [activity, projectActivity, projectStats, latestProjectUpdate] = await Promise.all([
   getCommitActivity(GITHUB_USERNAME, 90),
   getProjectActivity(GITHUB_USERNAME),
   getProjectStats(GITHUB_USERNAME),
+  getLatestProjectUpdate(),
 ]);
 
 // The "currently building" blurb. Rendered through the markdown pipeline so
@@ -22,6 +25,10 @@ const [activity, projectActivity, projectStats] = await Promise.all([
 // body via set:html collapsed the blank line between paragraphs.
 const nowEntry = await getEntry('now', 'now');
 const NowContent = nowEntry ? (await render(nowEntry)).Content : null;
+
+// The blurb is hand-maintained, so stamp it with its own updatedAt rather
+// than letting a fresh deploy imply the text is fresh too.
+const nowUpdated = nowEntry ? updatedLabel(nowEntry.data.updatedAt) : null;
 
 const featured = getFeaturedProjects();
 const activityByRepo = new Map(projectActivity.map((p) => [p.repo, p]));
@@ -45,21 +52,31 @@ const statsByRepo = new Map(projectStats.map((s) => [s.repo, s]));
     </section>
 
     <section class="section">
-      <Eyebrow>recent activity</Eyebrow>
+      <div class="section-heading">
+        <h2 class="section-title">Recent Activity</h2>
+      </div>
       <div class="section-body">
         <PushChart points={activity} unit="commits" />
       </div>
     </section>
 
     <section class="section">
-      <Eyebrow>currently building</Eyebrow>
+      <div class="section-heading">
+        {nowUpdated ? <Eyebrow>{nowUpdated}</Eyebrow> : null}
+        <h2 class="section-title">Currently Building</h2>
+      </div>
       <div class="section-body">
         {NowContent ? <Prose><NowContent /></Prose> : null}
       </div>
     </section>
 
     <section class="section">
-      <Eyebrow>projects</Eyebrow>
+      <div class="section-heading">
+        {latestProjectUpdate ? (
+          <Eyebrow>{updatedLabel(latestProjectUpdate)}</Eyebrow>
+        ) : null}
+        <h2 class="section-title">Projects</h2>
+      </div>
       <div class="section-body project-grid">
         {featured.map((project) => (
           <ProjectCard
@@ -117,6 +134,24 @@ const statsByRepo = new Map(projectStats.map((s) => [s.repo, s]));
 
   .section-body {
     margin-top: var(--space-7);
+  }
+
+  /* Same eyebrow-over-title stack the project cards use, at the same size, so
+     a section heading and a card title read as the same level of thing. */
+  .section-heading {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+  }
+
+  .section-title {
+    font-family: var(--font-serif);
+    font-size: 22px;
+    line-height: 1.2;
+    font-weight: 500;
+    letter-spacing: -0.01em;
+    margin: 0;
+    color: var(--color-ink);
   }
 
   /* ───── Project grid ───── */
