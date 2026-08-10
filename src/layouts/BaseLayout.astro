@@ -13,6 +13,13 @@
  * Build-time stamps:
  *   import.meta.env.BUILD_TIME — ISO string, set via astro.config.mjs.
  *   Used in the nav status block so visitors see how fresh the site is.
+ *
+ *   The relative label ("3h ago") is computed in the browser, not here. On a
+ *   static build the config and the page render seconds apart, so a
+ *   server-computed delta is always ~0 and bakes "just now" into the HTML
+ *   permanently — it read "just now" on a week-old deploy. The markup carries
+ *   the absolute timestamp in <time datetime>, which is both the no-JS
+ *   fallback and the value the inline script reads.
  */
 
 import '~/styles/global.css';
@@ -39,19 +46,12 @@ const isActive = (href: string) => {
   return path === href || path.startsWith(`${href}/`);
 };
 
-// "Last deployed" — relative time.
+// "Last deployed". Only the absolute timestamp is baked in — see the note in
+// the header comment for why the relative label has to be computed client-side.
 const buildTime = import.meta.env.BUILD_TIME ?? new Date().toISOString();
 const buildDate = new Date(buildTime);
-const buildAgo = (() => {
-  const ms = Date.now() - buildDate.getTime();
-  const mins = Math.round(ms / 60000);
-  if (mins < 1) return 'just now';
-  if (mins < 60) return `${mins}m ago`;
-  const hours = Math.round(mins / 60);
-  if (hours < 24) return `${hours}h ago`;
-  const days = Math.round(hours / 24);
-  return `${days}d ago`;
-})();
+const buildIso = buildDate.toISOString();
+const buildAbsolute = `${buildIso.slice(0, 16).replace('T', ' ')} UTC`;
 ---
 
 <!doctype html>
@@ -103,7 +103,9 @@ const buildAgo = (() => {
 
         <div class="status-block">
           <span class="status-dot" aria-hidden="true"></span>
-          <span class="status-text">deployed {buildAgo}</span>
+          <span class="status-text">
+            deployed <time id="build-time" datetime={buildIso} title={buildAbsolute}>{buildAbsolute}</time>
+          </span>
         </div>
       </div>
     </nav>
@@ -123,6 +125,32 @@ const buildAgo = (() => {
         </a>
       </div>
     </footer>
+
+    {/*
+      Turns the baked absolute build time into a relative label, and refreshes
+      it every minute so a tab left open doesn't drift. is:inline keeps this in
+      the HTML rather than emitting a bundled chunk — it's smaller than the
+      request it would otherwise cost. Buckets match the previous server-side
+      logic, so the wording is unchanged; it's just accurate now.
+    */}
+    <script is:inline>
+      (function () {
+        var el = document.getElementById('build-time');
+        if (!el) return;
+        var built = Date.parse(el.getAttribute('datetime'));
+        if (isNaN(built)) return;
+        function render() {
+          var mins = Math.round((Date.now() - built) / 60000);
+          if (mins < 1) return void (el.textContent = 'just now');
+          if (mins < 60) return void (el.textContent = mins + 'm ago');
+          var hours = Math.round(mins / 60);
+          if (hours < 24) return void (el.textContent = hours + 'h ago');
+          el.textContent = Math.round(hours / 24) + 'd ago';
+        }
+        render();
+        setInterval(render, 60000);
+      })();
+    </script>
 
     <style>
       /* ───── Container utilities ───── */

@@ -7,15 +7,14 @@ import Prose from '~/components/Prose.astro';
 import PushChart from '~/components/PushChart.astro';
 import Button from '~/components/Button.astro';
 import { getEntry, render } from 'astro:content';
-import { getFeaturedProjects } from '~/config/projects';
-import { getCommitActivity, getProjectActivity } from '~/lib/github';
-
-const GITHUB_USERNAME = 'nebulous-code';
+import { GITHUB_USERNAME, getFeaturedProjects } from '~/config/projects';
+import { getCommitActivity, getProjectActivity, getProjectStats } from '~/lib/github';
 
 // Build-time data fetch.
-const [activity, projectActivity] = await Promise.all([
+const [activity, projectActivity, projectStats] = await Promise.all([
   getCommitActivity(GITHUB_USERNAME, 90),
   getProjectActivity(),
+  getProjectStats(GITHUB_USERNAME),
 ]);
 
 // The "currently building" blurb. Rendered through the markdown pipeline so
@@ -26,6 +25,7 @@ const NowContent = nowEntry ? (await render(nowEntry)).Content : null;
 
 const featured = getFeaturedProjects();
 const activityByRepo = new Map(projectActivity.map((p) => [p.repo, p]));
+const statsByRepo = new Map(projectStats.map((s) => [s.repo, s]));
 ---
 
 <BaseLayout title="nebulous-code">
@@ -62,7 +62,11 @@ const activityByRepo = new Map(projectActivity.map((p) => [p.repo, p]));
       <Eyebrow>projects</Eyebrow>
       <div class="section-body project-grid">
         {featured.map((project) => (
-          <ProjectCard project={project} activity={activityByRepo.get(project.repo)} />
+          <ProjectCard
+            project={project}
+            activity={activityByRepo.get(project.repo)}
+            stats={statsByRepo.get(project.repo)}
+          />
         ))}
       </div>
     </section>

@@ -25,6 +25,10 @@
   --color-blue-deep:    #2c5475;
   --color-green:        #6e8a5d;
   --color-green-deep:   #2d3d28;
+  /* Moss lightened to clear 4.5:1 on bg-raised. Use when green has to be
+     readable copy rather than a fill or badge — --color-green is 3.90:1 at
+     body size, which is below AA. Same hue and saturation, brighter only. */
+  --color-green-text:   #789665;
   --color-orange:       #a8542e;
   --color-orange-deep:  #5c2c17;
 

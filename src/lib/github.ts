@@ -62,7 +62,21 @@ export interface ProjectActivity {
   lastCommitMessage: string | null; // null if not allowlisted or fetch failed
 }
 
-async function ghFetch(path: string): Promise<unknown> {
+/**
+ * Per-project card stats. Counts are always populated (they're just numbers);
+ * `latestRelease` and `languages` describe repo *content* and are therefore
+ * gated behind the allowlist, so a repo going private stops disclosing its
+ * tech stack and version tags on the next build.
+ */
+export interface ProjectStats {
+  repo: string;
+  totalCommits: number | null;
+  commits30d: number | null;
+  latestRelease: string | null; // tag name; null if no release or not allowlisted
+  languages: string[]; // empty if none clear the floor or not allowlisted
+}
+
+function ghHeaders(): Record<string, string> {
   const headers: Record<string, string> = {
     Accept: 'application/vnd.github+json',
     'X-GitHub-Api-Version': '2022-11-28',
@@ -71,8 +85,32 @@ async function ghFetch(path: string): Promise<unknown> {
   if (TOKEN) {
     headers['Authorization'] = `Bearer ${TOKEN}`;
   }
+  return headers;
+}
 
-  const res = await fetch(`${GITHUB_API}${path}`, { headers });
+/** Returns the raw Response so callers can read pagination headers. */
+async function ghFetchRaw(path: string): Promise<Response> {
+  const res = await fetch(`${GITHUB_API}${path}`, { headers: ghHeaders() });
+  if (!res.ok) {
+    throw new Error(`GitHub fetch failed: ${path} -> ${res.status}`);
+  }
+  return res;
+}
+
+async function ghFetch(path: string): Promise<unknown> {
+  return (await ghFetchRaw(path)).json();
+}
+
+/**
+ * Like ghFetch, but treats 404 as "this resource doesn't exist" rather than an
+ * error. GitHub returns 404 from /releases/latest for a repo that has never
+ * cut a release, which is the normal case here, not a failure.
+ */
+async function ghFetchOrNull(path: string): Promise<unknown | null> {
+  const res = await fetch(`${GITHUB_API}${path}`, { headers: ghHeaders() });
+  if (res.status === 404) {
+    return null;
+  }
   if (!res.ok) {
     throw new Error(`GitHub fetch failed: ${path} -> ${res.status}`);
   }
@@ -218,4 +256,106 @@ export async function getProjectActivity(): Promise<ProjectActivity[]> {
   );
 
   return results;
+}
+
+/**
+ * A language must account for at least this share of a repo's bytes to be
+ * shown. Without a floor the list fills with build output and stray config —
+ * a 394-byte HTML file is not something the project is "written in".
+ */
+const LANGUAGE_FLOOR = 0.12;
+const MAX_LANGUAGES = 3;
+
+/**
+ * Fetches the per-project KPI values shown on the project cards: total commits,
+ * commits in the last 30 days, the latest release tag, and the dominant
+ * languages.
+ *
+ * Each of the four fetches is independently guarded — one failing (or a repo
+ * having no releases at all) degrades that single cell to null rather than
+ * taking down the card or the build.
+ */
+export async function getProjectStats(username: string): Promise<ProjectStats[]> {
+  const repos = getTrackedRepos();
+  const allowlist = getContentAllowlist();
+  const since = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
+
+  return Promise.all(
+    repos.map(async (repo): Promise<ProjectStats> => {
+      const stats: ProjectStats = {
+        repo,
+        totalCommits: null,
+        commits30d: null,
+        latestRelease: null,
+        languages: [],
+      };
+
+      // Total commits on the default branch. GitHub exposes no count, so ask
+      // for a single commit and read the last page number out of the Link
+      // header — one request instead of walking the whole history.
+      try {
+        const res = await ghFetchRaw(`/repos/${repo}/commits?per_page=1`);
+        const lastPage = /[?&]page=(\d+)>;\s*rel="last"/.exec(
+          res.headers.get('link') ?? '',
+        )?.[1];
+        stats.totalCommits = lastPage
+          ? Number(lastPage)
+          : ((await res.json()) as unknown[]).length;
+      } catch (err) {
+        console.warn(`[github] total commits failed for ${repo}:`, err);
+      }
+
+      // Commits in the last 30 days, authored by `username` so collaborator
+      // work in a shared repo doesn't inflate the number.
+      try {
+        let count = 0;
+        for (let page = 1; page <= 3; page++) {
+          const commits = (await ghFetch(
+            `/repos/${repo}/commits?since=${since}&author=${username}&per_page=100&page=${page}`,
+          )) as GitHubCommit[];
+          count += commits.length;
+          if (commits.length < 100) break;
+        }
+        stats.commits30d = count;
+      } catch (err) {
+        console.warn(`[github] commits30d failed for ${repo}:`, err);
+      }
+
+      // Everything below describes repo content, so it stops here for repos
+      // that aren't explicitly allowlisted.
+      if (!allowlist.has(repo)) {
+        return stats;
+      }
+
+      try {
+        const release = (await ghFetchOrNull(
+          `/repos/${repo}/releases/latest`,
+        )) as { tag_name?: string } | null;
+        stats.latestRelease = release?.tag_name ?? null;
+      } catch (err) {
+        console.warn(`[github] latest release failed for ${repo}:`, err);
+      }
+
+      try {
+        const bytes = (await ghFetch(`/repos/${repo}/languages`)) as Record<
+          string,
+          number
+        >;
+        const total = Object.values(bytes).reduce((sum, n) => sum + n, 0);
+        if (total > 0) {
+          const ranked = Object.entries(bytes).sort((a, b) => b[1] - a[1]);
+          const major = ranked.filter(([, n]) => n / total >= LANGUAGE_FLOOR);
+          // An unusually even split can leave nothing above the floor; still
+          // show the leader rather than an empty row.
+          stats.languages = (major.length > 0 ? major : ranked.slice(0, 1))
+            .slice(0, MAX_LANGUAGES)
+            .map(([name]) => name);
+        }
+      } catch (err) {
+        console.warn(`[github] languages failed for ${repo}:`, err);
+      }
+
+      return stats;
+    }),
+  );
 }

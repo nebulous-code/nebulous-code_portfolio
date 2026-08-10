@@ -1,12 +1,16 @@
 ---
 import BaseLayout from '~/layouts/BaseLayout.astro';
 import ProjectCard from '~/components/ProjectCard.astro';
-import { getFeaturedProjects } from '~/config/projects';
-import { getProjectActivity } from '~/lib/github';
+import { GITHUB_USERNAME, getFeaturedProjects } from '~/config/projects';
+import { getProjectActivity, getProjectStats } from '~/lib/github';
 
 const projects = getFeaturedProjects();
-const projectActivity = await getProjectActivity();
+const [projectActivity, projectStats] = await Promise.all([
+  getProjectActivity(),
+  getProjectStats(GITHUB_USERNAME),
+]);
 const activityByRepo = new Map(projectActivity.map((p) => [p.repo, p]));
+const statsByRepo = new Map(projectStats.map((s) => [s.repo, s]));
 ---
 
 <BaseLayout title="Projects — nebulous-code">
@@ -27,6 +31,7 @@ const activityByRepo = new Map(projectActivity.map((p) => [p.repo, p]));
           <ProjectCard
             project={project}
             activity={activityByRepo.get(project.repo)}
+            stats={statsByRepo.get(project.repo)}
           />
         ))}
       </div>

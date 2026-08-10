@@ -20,15 +20,16 @@ import KpiGrid from './KpiGrid.astro';
 import KpiCell from './KpiCell.astro';
 import Sparkline from './Sparkline.astro';
 import type { ProjectConfig } from '~/config/projects';
-import type { ProjectActivity } from '~/lib/github';
+import type { ProjectActivity, ProjectStats } from '~/lib/github';
 
 interface Props {
   project: ProjectConfig;
   activity?: ProjectActivity | undefined;
+  stats?: ProjectStats | undefined;
   sparkline?: { date: string; count: number }[];
 }
 
-const { project, activity, sparkline = [] } = Astro.props;
+const { project, activity, stats, sparkline = [] } = Astro.props;
 
 // Derive last-update label.
 const lastUpdateLabel = (() => {
@@ -71,6 +72,10 @@ const eyebrowText = `project · ${statusLabel}`;
 
   <p class="description">{project.tagline}</p>
 
+  {stats && stats.languages.length > 0 ? (
+    <p class="languages">{stats.languages.join(' · ')}</p>
+  ) : null}
+
   <KpiGrid columns={4}>
     <KpiCell
       label="last push"
@@ -78,9 +83,14 @@ const eyebrowText = `project · ${statusLabel}`;
     >
       {lastUpdateLabel}
     </KpiCell>
-    <KpiCell label="latest release">—</KpiCell>
-    <KpiCell label="commits 30d">—</KpiCell>
-    <KpiCell label="open prs">—</KpiCell>
+    <KpiCell
+      label="latest release"
+      tone={stats?.latestRelease ? 'orange' : 'ink'}
+    >
+      {stats?.latestRelease ?? '—'}
+    </KpiCell>
+    <KpiCell label="total commits">{stats?.totalCommits ?? '—'}</KpiCell>
+    <KpiCell label="commits 30d">{stats?.commits30d ?? '—'}</KpiCell>
   </KpiGrid>
 
   <footer class="card-footer">
@@ -162,6 +172,17 @@ const eyebrowText = `project · ${statusLabel}`;
     font-size: 12px;
     line-height: 1.5;
     color: var(--color-ink-muted);
+    margin: 0;
+  }
+
+  /* Dominant languages, middle-dot separated. Lowercased in CSS so the API's
+     casing ("JavaScript") stays intact in the data. */
+  .languages {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    line-height: 1.4;
+    text-transform: lowercase;
+    color: var(--color-green-text);
     margin: 0;
   }
 

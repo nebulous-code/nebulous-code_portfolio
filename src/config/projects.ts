@@ -60,6 +60,9 @@
  * - `tags`            Free-form tag list for the /projects index filter.
  */
 
+/** GitHub account that owns the tracked repos. Used by the data pipeline. */
+export const GITHUB_USERNAME = 'nebulous-code';
+
 export type ProjectVisibility = 'public' | 'private-saas' | 'private-wip';
 
 export interface ProjectConfig {
