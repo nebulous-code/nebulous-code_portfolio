@@ -91,9 +91,9 @@ export const PROJECTS: ProjectConfig[] = [
   },
   {
     slug: 'cube-practice',
-    name: 'Rubik\u2019s Cube Practice',
+    name: 'Quiet-Cube',
     tagline: 'Web app for drilling OLL algorithms with spaced repetition.',
-    repo: 'nebulous-code/cube_practice_app',
+    repo: 'nebulous-code/quiet-cube',
     visibility: 'public',
     tracked: true,
     featured: true,
