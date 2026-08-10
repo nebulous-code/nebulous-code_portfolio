@@ -13,7 +13,7 @@ import { getCommitActivity, getProjectActivity, getProjectStats } from '~/lib/gi
 // Build-time data fetch.
 const [activity, projectActivity, projectStats] = await Promise.all([
   getCommitActivity(GITHUB_USERNAME, 90),
-  getProjectActivity(),
+  getProjectActivity(GITHUB_USERNAME),
   getProjectStats(GITHUB_USERNAME),
 ]);
 

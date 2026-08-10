@@ -6,7 +6,7 @@ import { getProjectActivity, getProjectStats } from '~/lib/github';
 
 const projects = getFeaturedProjects();
 const [projectActivity, projectStats] = await Promise.all([
-  getProjectActivity(),
+  getProjectActivity(GITHUB_USERNAME),
   getProjectStats(GITHUB_USERNAME),
 ]);
 const activityByRepo = new Map(projectActivity.map((p) => [p.repo, p]));
@@ -18,7 +18,7 @@ const statsByRepo = new Map(projectStats.map((s) => [s.repo, s]));
     <section class="hero">
       <h1 class="display">Projects</h1>
       <p class="lede">
-        Things I've built. Each has a longer case study with the decisions,
+        Things I've built. Each has a longer project summary with the decisions,
         the dead ends, and what I'd do differently.
       </p>
     </section>

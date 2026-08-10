@@ -52,10 +52,16 @@
  *                     for the sanitization layer.
  *                     Should always be false for visibility !== 'public'.
  *
- * - `productUrl`      For 'private-saas' projects, the live product URL.
+ * - `liveUrl`         Where a visitor can actually use the thing (e.g.,
+ *                     cards.nebulouscode.com). Surfaced on both the project
+ *                     card and the summary page. Omit if there's nowhere to
+ *                     send them yet — the link is skipped rather than broken.
  *
- * - `liveDemoUrl`     Optional live demo URL (e.g., pokemon.nebulouscode.com).
- *                     Used for the "Live demo" link on cards and case studies.
+ * - `linkKind`        How that link is labeled. Deliberately independent of
+ *                     `visibility`: an open-source repo can still be a real
+ *                     product someone uses, and a closed one can be a toy.
+ *                     Defaults to 'demo'. See PROJECT_LINK_LABELS to add a
+ *                     new kind (a desktop download, say).
  *
  * - `tags`            Free-form tag list for the /projects index filter.
  */
@@ -64,6 +70,18 @@
 export const GITHUB_USERNAME = 'nebulous-code';
 
 export type ProjectVisibility = 'public' | 'private-saas' | 'private-wip';
+
+/**
+ * What kind of thing `liveUrl` points at, which decides how the link reads.
+ * Add a kind here and give it a label in PROJECT_LINK_LABELS — nothing else
+ * needs to change.
+ */
+export type ProjectLinkKind = 'demo' | 'product';
+
+const PROJECT_LINK_LABELS: Record<ProjectLinkKind, string> = {
+  demo: 'live demo →',
+  product: 'visit product →',
+};
 
 export interface ProjectConfig {
   slug: string;
@@ -74,8 +92,8 @@ export interface ProjectConfig {
   tracked: boolean;
   featured: boolean;
   allowlistContent: boolean;
-  productUrl?: string;
-  liveDemoUrl?: string;
+  liveUrl?: string;
+  linkKind?: ProjectLinkKind;
   tags: string[];
 }
 
@@ -89,7 +107,8 @@ export const PROJECTS: ProjectConfig[] = [
     tracked: true,
     featured: true,
     allowlistContent: true,
-    liveDemoUrl: 'https://pokemon.nebulouscode.com',
+    liveUrl: 'https://cards.nebulouscode.com',
+    linkKind: 'product',
     tags: ['vue', 'fastapi', 'postgres', 'data-viz'],
   },
   {
@@ -101,6 +120,9 @@ export const PROJECTS: ProjectConfig[] = [
     tracked: true,
     featured: true,
     allowlistContent: true,
+    // Open source, but a real product someone can use.
+    liveUrl: 'https://quiet-cube.com/',
+    linkKind: 'product',
     tags: ['vue', 'spaced-repetition'],
   },
   {
@@ -112,6 +134,9 @@ export const PROJECTS: ProjectConfig[] = [
     tracked: true,
     featured: true,
     allowlistContent: true,
+    // A toy you play with rather than a product, so it keeps the 'demo'
+    // default. Served from the chip8-vue repo, not the tracked chip-8 one.
+    liveUrl: 'https://nebulous-code.github.io/chip8-vue/',
     tags: ['rust', 'emulator', 'tauri'],
   },
 ];
@@ -136,4 +161,19 @@ export function getContentAllowlist(): Set<string> {
 
 export function getProjectBySlug(slug: string): ProjectConfig | undefined {
   return PROJECTS.find((p) => p.slug === slug);
+}
+
+/**
+ * The "go use the thing" link, resolved to an href and its label. Shared by
+ * the project card and the summary page so the two can't drift apart.
+ * Returns null when there's nowhere to send a visitor yet.
+ */
+export function getLiveLink(
+  project: ProjectConfig,
+): { href: string; label: string } | null {
+  if (!project.liveUrl) return null;
+  return {
+    href: project.liveUrl,
+    label: PROJECT_LINK_LABELS[project.linkKind ?? 'demo'],
+  };
 }

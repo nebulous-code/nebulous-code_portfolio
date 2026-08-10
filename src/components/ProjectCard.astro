@@ -19,6 +19,7 @@ import Badge from './Badge.astro';
 import KpiGrid from './KpiGrid.astro';
 import KpiCell from './KpiCell.astro';
 import Sparkline from './Sparkline.astro';
+import { getLiveLink } from '~/config/projects';
 import type { ProjectConfig } from '~/config/projects';
 import type { ProjectActivity, ProjectStats } from '~/lib/github';
 
@@ -26,10 +27,25 @@ interface Props {
   project: ProjectConfig;
   activity?: ProjectActivity | undefined;
   stats?: ProjectStats | undefined;
-  sparkline?: { date: string; count: number }[];
 }
 
-const { project, activity, stats, sparkline = [] } = Astro.props;
+const { project, activity, stats } = Astro.props;
+
+// 13 weekly buckets from the data pipeline; empty only if that fetch failed.
+const activityWeeks = stats?.activityWeeks ?? [];
+const activityTotal = activityWeeks.reduce((sum, p) => sum + p.count, 0);
+
+// A chart of thirteen empty buckets says nothing, so the whole block (label
+// included) is dropped. Deliberately keyed off the data rather than the
+// active/idle badge: the badge is a 30-day window, so a project paused for a
+// month would lose a chart that still holds a quarter of real history.
+const hasActivity = activityTotal > 0;
+
+// The live link is the card's primary action, sitting last so it lands on the
+// right edge and reads as the button. The summary link stays muted beside it,
+// and code isn't here at all — it lives on the summary page as the audit
+// trail rather than the pitch.
+const liveLink = getLiveLink(project);
 
 // Derive last-update label.
 const lastUpdateLabel = (() => {
@@ -94,30 +110,29 @@ const eyebrowText = `project · ${statusLabel}`;
   </KpiGrid>
 
   <footer class="card-footer">
-    <div class="sparkline-block">
-      <Eyebrow>activity</Eyebrow>
-      <Sparkline points={sparkline} unit="commits" width={120} height={20} />
-    </div>
+    {hasActivity ? (
+      <div class="sparkline-block">
+        <Eyebrow>activity</Eyebrow>
+        <Sparkline
+          points={activityWeeks}
+          unit="commits"
+          width={120}
+          height={20}
+          ariaLabel={`${activityTotal} commits over the last 13 weeks`}
+        />
+      </div>
+    ) : null}
     <div class="actions">
-      <a class="action-link primary" href={`/projects/${project.slug}` }>
-        case study →
+      <a class="action-link secondary" href={`/projects/${project.slug}`}>
+        project summary →
       </a>
-      {project.visibility === 'public' ? (
-        <a class="action-link secondary"
-          href={`https://github.com/${project.repo}`}
-          target="_blank"
-          rel="noopener"
-        >
-          code →
-        </a>
-      ) : null}
-      {project.visibility === 'private-saas' && project.productUrl ? (
+      {liveLink ? (
         <a class="action-link primary"
-          href={project.productUrl}
+          href={liveLink.href}
           target="_blank"
           rel="noopener"
         >
-          visit product →
+          {liveLink.label}
         </a>
       ) : null}
     </div>
@@ -201,11 +216,14 @@ const eyebrowText = `project · ${statusLabel}`;
     min-width: 0;
   }
 
+  /* margin-left keeps the links right-aligned even when the activity block
+     is absent, which happens if that fetch fails. */
   .actions {
     display: flex;
     gap: var(--space-5);
     align-items: center;
     white-space: nowrap;
+    margin-left: auto;
   }
 
   .action-link {

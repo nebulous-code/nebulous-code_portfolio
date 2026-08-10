@@ -1,4 +1,24 @@
 ---
+/**
+ * Sparkline — the compact per-project activity chart in the card footer.
+ *
+ * Bars, not a polyline. Commit history here is bursty: a handful of active
+ * days separated by long gaps. At this size a line renders those bursts as
+ * single-pixel needles on an otherwise flat stroke, which reads as "no data"
+ * rather than "worked on it hard, twice." Empty buckets keep a faint tick so
+ * the timeline reads as continuous instead of truncated.
+ *
+ * Scales to its own maximum, so each card shows its own rhythm and cards are
+ * deliberately NOT comparable to each other — the KPI cells above carry the
+ * absolute numbers.
+ *
+ * Green per DESIGN_DOC §5, which reserves it for per-project activity; the
+ * site-wide PushChart on the home page stays blue/orange so the two read as
+ * different things. At 3.9:1 on bg-raised this clears the 3:1 WCAG floor for
+ * non-text graphics (it would not clear the 4.5:1 text threshold, which is
+ * why the language row uses --color-green-text instead).
+ */
+
 interface Point {
   date: string;
   count: number;
@@ -14,76 +34,58 @@ interface Props {
 
 const {
   points,
-  width = 80,
-  height = 16,
-  unit = 'count',
-  ariaLabel = 'recent count',
+  width = 120,
+  height = 20,
+  unit = 'commits',
+  ariaLabel = 'recent activity',
 } = Astro.props;
 
-const PAD = 2;
-const innerW = Math.max(0, width - PAD * 2);
-const innerH = Math.max(0, height - PAD * 2);
+// viewBox units per bucket. The SVG is stretched to `width` by the width
+// attribute, so these are proportions rather than pixels.
+const SLOT_W = 4;
+const BAR_W = 3;
+const MIN_BAR_H = 1; // empty buckets render as a baseline tick
 
-const max = Math.max(1, ...points.map((p) => p.count));
-const stepX = points.length > 1 ? innerW / (points.length - 1) : 0;
+const max = Math.max(0, ...points.map((p) => p.count));
+const vbWidth = points.length * SLOT_W;
 
-const coords = points.map((p, i) => {
-  const x = PAD + i * stepX;
-  const y = PAD + innerH - (p.count / max) * innerH;
-  return { x, y };
+const bars = points.map((point, i) => {
+  const scaled = max > 0 ? (point.count / max) * height : 0;
+  const barHeight = point.count > 0 ? Math.max(MIN_BAR_H, scaled) : MIN_BAR_H;
+  return {
+    x: i * SLOT_W + (SLOT_W - BAR_W) / 2,
+    y: height - barHeight,
+    height: barHeight,
+    opacity: point.count === 0 ? 0.18 : 0.4 + 0.6 * (point.count / max),
+    title: `${point.count} ${unit} · week of ${point.date}`,
+  };
 });
-
-const polylinePoints = coords.map((c) => `${c.x},${c.y}`).join(' ');
-const last = coords[coords.length - 1];
-const lastPoint = points[points.length - 1];
 ---
 
-<svg
-  class="sparkline"
-  viewBox={`0 0 ${width} ${height}`}
-  width={width}
-  height={height}
-  role="img"
-  aria-label={ariaLabel}
-  preserveAspectRatio="none"
->
-  {points.length > 0 && (
-    <>
-      <polyline
-        points={polylinePoints}
-        fill="none"
-        stroke="var(--color-green)"
-        stroke-width="1"
-        stroke-linejoin="round"
-        stroke-linecap="round"
-        vector-effect="non-scaling-stroke"
-      />
-      {last && (
-        <circle
-          cx={last.x}
-          cy={last.y}
-          r="2"
-          fill="var(--color-green)"
-        />
-      )}
-      {/* Invisible hover-catcher covering the entire sparkline. Showing
-          the latest value is the most useful signal regardless of where
-          the cursor lands. */}
+{points.length > 0 ? (
+  <svg
+    class="sparkline"
+    viewBox={`0 0 ${vbWidth} ${height}`}
+    width={width}
+    height={height}
+    preserveAspectRatio="none"
+    role="img"
+    aria-label={ariaLabel}
+  >
+    {bars.map((bar) => (
       <rect
-        x="0"
-        y="0"
-        width={width}
-        height={height}
-        fill="transparent"
-        pointer-events="all"
+        x={bar.x}
+        y={bar.y}
+        width={BAR_W}
+        height={bar.height}
+        fill="var(--color-green)"
+        opacity={bar.opacity}
       >
-        {lastPoint && (
-          <title>{`${lastPoint.count} ${unit} on ${lastPoint.date}`}</title>
-        )}
+        <title>{bar.title}</title>
       </rect>
-    </>
-  )}
-</svg>
+    ))}
+  </svg>
+) : null}
 
 <style>
   .sparkline {

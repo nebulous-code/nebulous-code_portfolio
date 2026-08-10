@@ -41,7 +41,8 @@ The next build will pick up fresh data within ~2 minutes.
      tracked: true,
      featured: true,
      allowlistContent: true,
-     liveDemoUrl: 'https://my-new-project.nebulouscode.com', // optional
+     liveUrl: 'https://my-new-project.nebulouscode.com', // optional
+     linkKind: 'product', // 'demo' (default) or 'product'
      tags: ['vue', 'whatever'],
    }
    ```
@@ -76,8 +77,8 @@ The next build will pick up fresh data within ~2 minutes.
 | `tracked` | If true, contributes to the activity sparkline (count + date only). |
 | `featured` | If true, appears on home page and `/projects` index. |
 | `allowlistContent` | Opt-in to showing commit messages, SHAs, branch names. Default-deny. Should always be `false` if `visibility !== 'public'`. |
-| `productUrl` | For `private-saas`: the live product URL. |
-| `liveDemoUrl` | For `public`: the live demo URL (e.g., subdomain). |
+| `liveUrl` | Where a visitor can use the thing. Shown on the card and the summary page. Omit if there's nowhere to send them yet. |
+| `linkKind` | How `liveUrl` is labeled: `'demo'` (default) or `'product'`. Independent of `visibility` — an open repo can still be a real product. |
 | `tags` | Free-form tags for filtering. |
 
 ## Transitioning public → private SaaS
@@ -88,8 +89,7 @@ The expected path: a free demo project gains real users, gets paywalled features
 2. **`src/config/projects.ts`** for that project entry:
    - `visibility`: `'public'` → `'private-saas'`
    - `allowlistContent`: `true` → `false`
-   - Add `productUrl: 'https://...'`
-   - Optionally update `liveDemoUrl` (or remove it if there's no separate demo)
+   - Point `liveUrl` at the product and set `linkKind: 'product'` if it isn't already
 3. **Case study MDX**: review the prose and remove anything that's now competitive intelligence (specific feature roadmap items, internal architectural details that give away differentiators). Set `hasArchitectureSection: true` and add an architecture section that substitutes for the missing "View Code" affordance.
 4. Commit and push.
 

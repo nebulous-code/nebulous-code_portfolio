@@ -74,6 +74,7 @@ export interface ProjectStats {
   commits30d: number | null;
   latestRelease: string | null; // tag name; null if no release or not allowlisted
   languages: string[]; // empty if none clear the floor or not allowlisted
+  activityWeeks: ActivityPoint[]; // 13 weekly buckets, oldest first
 }
 
 function ghHeaders(): Record<string, string> {
@@ -221,13 +222,26 @@ export async function getCommitActivity(
 }
 
 /**
- * Fetches the latest commit on the default branch for each tracked repo.
+ * Fetches the latest commit authored by `username` on the default branch for
+ * each tracked repo. This drives the "last push" cell and the active/idle
+ * badge on the project cards.
+ *
+ * The author filter is load-bearing, not a nicety. Unfiltered, any scheduled
+ * automation committing to a repo (a weekly stats bot, a dependency updater)
+ * keeps that project reading "last push: today · active" forever, so a card
+ * advertises work nobody is doing. Filtering to the account owner means the
+ * badge reflects human activity and a paused project goes idle on its own.
+ * It also keeps this function consistent with getProjectStats, which has
+ * always filtered by author.
+ *
  * The commit message is only included for repos on the content allowlist;
  * for others, the date is returned but the message is null. This is the
  * core rule that protects private SaaS repos from leaking via the project
  * cards.
  */
-export async function getProjectActivity(): Promise<ProjectActivity[]> {
+export async function getProjectActivity(
+  username: string,
+): Promise<ProjectActivity[]> {
   const repos = getTrackedRepos();
   const allowlist = getContentAllowlist();
 
@@ -235,7 +249,7 @@ export async function getProjectActivity(): Promise<ProjectActivity[]> {
     repos.map(async (repo): Promise<ProjectActivity> => {
       try {
         const commits = (await ghFetch(
-          `/repos/${repo}/commits?per_page=1`,
+          `/repos/${repo}/commits?author=${username}&per_page=1`,
         )) as GitHubCommit[];
         const latest = commits[0];
         if (!latest) {
@@ -267,6 +281,44 @@ const LANGUAGE_FLOOR = 0.12;
 const MAX_LANGUAGES = 3;
 
 /**
+ * Window for the per-card activity chart. Weekly rather than daily buckets
+ * because that chart is ~120px wide: 91 daily bars would be sub-pixel, and
+ * these repos are worked in bursts, so a one-day spike would disappear.
+ */
+const ACTIVITY_WEEKS = 13;
+const ACTIVITY_DAYS = ACTIVITY_WEEKS * 7;
+
+/** ISO date `offset` days before today, matching the API's date keys. */
+function dayKey(offset: number): string {
+  return new Date(Date.now() - offset * 24 * 60 * 60 * 1000)
+    .toISOString()
+    .slice(0, 10);
+}
+
+/** Commits within the most recent `days` days of a day-keyed bucket map. */
+function sumRecentDays(daily: Map<string, number>, days: number): number {
+  let total = 0;
+  for (let i = 0; i < days; i++) {
+    total += daily.get(dayKey(i)) ?? 0;
+  }
+  return total;
+}
+
+/** Collapses daily counts into ACTIVITY_WEEKS 7-day buckets, oldest first. */
+function weeklyBuckets(daily: Map<string, number>): ActivityPoint[] {
+  const weeks: ActivityPoint[] = [];
+  for (let w = ACTIVITY_WEEKS - 1; w >= 0; w--) {
+    let count = 0;
+    for (let d = 0; d < 7; d++) {
+      count += daily.get(dayKey(w * 7 + d)) ?? 0;
+    }
+    // Dated by the first day of the bucket, which is what the tooltip shows.
+    weeks.push({ date: dayKey(w * 7 + 6), count });
+  }
+  return weeks;
+}
+
+/**
  * Fetches the per-project KPI values shown on the project cards: total commits,
  * commits in the last 30 days, the latest release tag, and the dominant
  * languages.
@@ -278,7 +330,9 @@ const MAX_LANGUAGES = 3;
 export async function getProjectStats(username: string): Promise<ProjectStats[]> {
   const repos = getTrackedRepos();
   const allowlist = getContentAllowlist();
-  const since = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
+  const since = new Date(
+    Date.now() - ACTIVITY_DAYS * 24 * 60 * 60 * 1000,
+  ).toISOString();
 
   return Promise.all(
     repos.map(async (repo): Promise<ProjectStats> => {
@@ -288,6 +342,7 @@ export async function getProjectStats(username: string): Promise<ProjectStats[]>
         commits30d: null,
         latestRelease: null,
         languages: [],
+        activityWeeks: [],
       };
 
       // Total commits on the default branch. GitHub exposes no count, so ask
@@ -305,20 +360,25 @@ export async function getProjectStats(username: string): Promise<ProjectStats[]>
         console.warn(`[github] total commits failed for ${repo}:`, err);
       }
 
-      // Commits in the last 30 days, authored by `username` so collaborator
-      // work in a shared repo doesn't inflate the number.
+      // A single walk over the activity window feeds both the commits-30d
+      // cell and the weekly activity chart. Filtered to `username` so
+      // collaborator work in a shared repo doesn't inflate either number.
       try {
-        let count = 0;
-        for (let page = 1; page <= 3; page++) {
+        const daily = new Map<string, number>();
+        for (let page = 1; page <= 5; page++) {
           const commits = (await ghFetch(
             `/repos/${repo}/commits?since=${since}&author=${username}&per_page=100&page=${page}`,
           )) as GitHubCommit[];
-          count += commits.length;
+          for (const commit of commits) {
+            const day = commit.commit.author.date.slice(0, 10);
+            daily.set(day, (daily.get(day) ?? 0) + 1);
+          }
           if (commits.length < 100) break;
         }
-        stats.commits30d = count;
+        stats.commits30d = sumRecentDays(daily, 30);
+        stats.activityWeeks = weeklyBuckets(daily);
       } catch (err) {
-        console.warn(`[github] commits30d failed for ${repo}:`, err);
+        console.warn(`[github] commit history failed for ${repo}:`, err);
       }
 
       // Everything below describes repo content, so it stops here for repos

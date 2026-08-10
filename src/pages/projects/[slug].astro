@@ -14,7 +14,7 @@
 import BaseLayout from '~/layouts/BaseLayout.astro';
 import Prose from '~/components/Prose.astro';
 import { getCollection, render } from 'astro:content';
-import { getProjectBySlug } from '~/config/projects';
+import { getLiveLink, getProjectBySlug } from '~/config/projects';
 
 export async function getStaticPaths() {
   const entries = await getCollection('projects');
@@ -33,7 +33,14 @@ const publishedLabel = entry.data.publishedAt.toLocaleDateString('en-US', {
   month: 'long',
 });
 
-const codeUrl = project ? `https://github.com/${project.repo}` : null;
+// Same live-link resolution the card uses, so label and URL can't drift.
+// Unlike the card, this page also surfaces the repo — code is the secondary,
+// audit-it-if-you-care action, which is why it sits two clicks in.
+const liveLink = project ? getLiveLink(project) : null;
+const codeUrl =
+  project && project.visibility === 'public'
+    ? `https://github.com/${project.repo}`
+    : null;
 ---
 
 <BaseLayout title={`${entry.data.title} — nebulous-code`} description={entry.data.summary}>
@@ -46,19 +53,14 @@ const codeUrl = project ? `https://github.com/${project.repo}` : null;
 
         {project ? (
           <div class="actions">
-            {project.liveDemoUrl ? (
-              <a class="action-link" href={project.liveDemoUrl} target="_blank" rel="noopener">
-                live demo →
+            {liveLink ? (
+              <a class="action-link" href={liveLink.href} target="_blank" rel="noopener">
+                {liveLink.label}
               </a>
             ) : null}
-            {project.visibility === 'public' && codeUrl ? (
-              <a class="action-link" href={codeUrl} target="_blank" rel="noopener">
+            {codeUrl ? (
+              <a class="action-link muted" href={codeUrl} target="_blank" rel="noopener">
                 code →
-              </a>
-            ) : null}
-            {project.visibility === 'private-saas' && project.productUrl ? (
-              <a class="action-link" href={project.productUrl} target="_blank" rel="noopener">
-                visit product →
               </a>
             ) : null}
           </div>
@@ -78,19 +80,14 @@ const codeUrl = project ? `https://github.com/${project.repo}` : null;
       <footer class="case-footer">
         {project ? (
           <div class="actions">
-            {project.liveDemoUrl ? (
-              <a class="action-link" href={project.liveDemoUrl} target="_blank" rel="noopener">
-                live demo →
+            {liveLink ? (
+              <a class="action-link" href={liveLink.href} target="_blank" rel="noopener">
+                {liveLink.label}
               </a>
             ) : null}
-            {project.visibility === 'public' && codeUrl ? (
-              <a class="action-link" href={codeUrl} target="_blank" rel="noopener">
+            {codeUrl ? (
+              <a class="action-link muted" href={codeUrl} target="_blank" rel="noopener">
                 code →
-              </a>
-            ) : null}
-            {project.visibility === 'private-saas' && project.productUrl ? (
-              <a class="action-link" href={project.productUrl} target="_blank" rel="noopener">
-                visit product →
               </a>
             ) : null}
           </div>
@@ -149,6 +146,12 @@ const codeUrl = project ? `https://github.com/${project.repo}` : null;
     color: var(--color-blue);
     text-decoration: none;
     letter-spacing: 0.02em;
+  }
+
+  /* Code is the audit-it-if-you-care action, so it reads quieter than the
+     link that takes you to the working thing. */
+  .action-link.muted {
+    color: var(--color-ink-muted);
   }
 
   .action-link:hover {
