@@ -1,12 +1,50 @@
 ---
 slug: chip8-emulator
 title: Chip-8 Emulator
-summary: A Chip-8 emulator written in Rust as a library, with a Vue/desktop wrapper for actually running ROMs.
-publishedAt: 2026-05-04
+summary: A Chip-8 emulator written in Rust as a library, with a Vue and desktop wrapper for actually running ROMs.
+publishedAt: 2026-08-11
 tags:
   - emulator
+  - retro_computing
 hasArchitectureSection: false
 ---
 
-A Chip-8 emulator created in rust presented in Vue. 
+Chip-8 is a retro game platform built for the COSMAC VIP and Telmac 1800 in the mid-1970s. I've written a library that will simulate the way the Chip-8 works. This allows users to play games built for the system.
+
+- **Status:** Shipped
+- **Released:** January 2026
+
+## Why I Built It
+
+I've always enjoyed retro game consoles but rarely want to spend the time or money to get one built. I've used emulators for other consoles and have a background in electrical engineering. This seemed like a fun and cheap way to play around with emulating logic and learning more about computer engineering.
+
+## What It Does
+
+- Emulates a basic Chip-8
+- Includes screen wrapping and other toggleable quirks
+- Can be integrated into a web app, desktop app, or anything else
+
+## Who It's For
+
+This project was built for me so I could learn more about emulators, retro computing, and computer engineering. If you need a Chip-8 emulator that handles the base Chip-8 instructions with minimum bells and whistles, this project might be for you.
+
+## How It Works
+
+A core library holds the logic of the system and can be integrated into any program that can import Rust crates. The library itself has a method to parse a ROM's instructions. It outputs to consuming programs via its simulated memory, keyboard, and frame buffer.
+
+- **Built with:** Rust. Presented in Vue and eframe.
+- **Runs on:** Anything that compiles Rust. Plus the browser via wasm.
+- **Leverages:** Timendus's [Chip-8 test suite](https://github.com/Timendus/chip8-test-suite), wasm-bindgen.
+
+Crates are available at crates.io as a Chip-8 system ([chip8sys](https://crates.io/crates/chip8sys)) and a wasm-bindgen wrapper ([chip8wasm](https://crates.io/crates/chip8wasm)).
+
+Quirks for the system are able to be set during instantiation. Available quirks are: increment I on store, reset VF on logic, wrap sprite drawing, and shift uses VX.
+
+## What It Taught Me
+
+This was a very approachable way to learn how to structure an emulator process. I originally was writing the frames inside the crate itself which made it difficult to present or build for others. Once I drew the line between the library and the things that consumed the library, integration went a lot easier.
+
+I enjoyed the puzzle and constraints of working off of just the design docs. Figuring out how to understand and then implement basic logic used in these retro computers was an interesting challenge I hadn't faced before.
+
+I look forward to taking on a bigger emulation project in the future.
 

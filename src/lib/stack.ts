@@ -18,6 +18,24 @@
  */
 
 /**
+ * Drops asserted entries that the measured list already covers, matched
+ * case-insensitively.
+ *
+ * `vue` is both a Linguist language and a legitimate `StackTech` — measured in
+ * the dashboard, asserted in chip-8, where the Vue wrapper lives in a separate
+ * repo. Without this, a project carrying it on both sides would render
+ * "vue · vue", since the display lowercases everything anyway. The measured
+ * side wins because it self-corrects.
+ */
+function withoutDuplicates(
+  languages: readonly string[],
+  stack: readonly string[],
+): string[] {
+  const measured = new Set(languages.map((l) => l.toLowerCase()));
+  return stack.filter((s) => !measured.has(s.toLowerCase()));
+}
+
+/**
  * Up to three, guaranteeing at least one of each kind when both exist, and
  * spending any leftover slot on a language first.
  *
@@ -30,9 +48,10 @@
  */
 export function pickFeaturedTech(
   languages: readonly string[],
-  stack: readonly string[],
+  rawStack: readonly string[],
   limit = 3,
 ): string[] {
+  const stack = withoutDuplicates(languages, rawStack);
   const chosenLanguages: string[] = [];
   const chosenStack: string[] = [];
 
@@ -64,5 +83,5 @@ export function allTech(
   languages: readonly string[],
   stack: readonly string[],
 ): string[] {
-  return [...languages, ...stack];
+  return [...languages, ...withoutDuplicates(languages, stack)];
 }

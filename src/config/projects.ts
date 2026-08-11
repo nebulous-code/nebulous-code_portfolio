@@ -93,9 +93,11 @@ export type StackTech =
   | 'redis'
   | 'docker'
   | 'fastapi'
-  | 'tauri'
   | 'tailwind'
-  | 'cargo';
+  | 'cargo'
+  | 'vue'
+  | 'wasm'
+  | 'eframe';
 
 /**
  * What kind of thing `liveUrl` points at, which decides how the link reads.
@@ -165,7 +167,7 @@ export const PROJECTS: ProjectConfig[] = [
     // A toy you play with rather than a product, so it keeps the 'demo'
     // default. Served from the chip8-vue repo, not the tracked chip-8 one.
     liveUrl: 'https://nebulous-code.github.io/chip8-vue/',
-    stack: ['cargo', 'tauri'],
+    stack: ['vue', 'wasm', 'eframe'],
   },
 ];
 

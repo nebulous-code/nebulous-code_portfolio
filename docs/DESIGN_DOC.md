@@ -248,7 +248,9 @@ Appears on project cards, project summary pages, post cards, and post pages. Alw
 | languages | GitHub languages API | measured; re-derived every build; filtered to ≥12% of repo bytes |
 | `stack` | `src/config/projects.ts` | asserted by hand; always shown |
 
-`stack` exists because the API measures *bytes of code*, so anything used rather than written is invisible to it. The card dashboard reports no SQL at all — 0.06% Mako from Alembic templates is its only database trace. Merged for display because a reader doesn't care which half was counted; kept separate in config because only one half self-corrects.
+`stack` exists because the API measures *bytes of code*, so anything used rather than written is invisible to it. The card dashboard reports no SQL at all — 0.06% Mako from Alembic templates is its only database trace. Chip-8 reports 100% Rust, hiding the Vue wrapper (a separate repo), the wasm target, and eframe entirely. Merged for display because a reader doesn't care which half was counted; kept separate in config because only one half self-corrects.
+
+**Asserted entries the measured list already covers are dropped**, matched case-insensitively. `vue` is legitimately both — measured in the dashboard, asserted in Chip-8 — so without that the row could render `vue · vue`. The measured side wins, because it self-corrects.
 
 **How many show, by surface:**
 
@@ -257,7 +259,7 @@ Appears on project cards, project summary pages, post cards, and post pages. Alw
 | project card, post card | **three at most**, guaranteeing at least one language and one stack entry when both exist; a spare slot goes to a language first |
 | project summary, post page | **everything** |
 
-The guarantee is the point. Quiet-Cube's card reads `rust · vue · postgres` — JavaScript is dropped so the database isn't hidden — while its summary page reads `rust · vue · javascript · postgres`. A single-language repo still fills the row from stack: Chip-8 shows `rust · cargo · tauri`.
+The guarantee is the point. Quiet-Cube's card reads `rust · vue · postgres` — JavaScript is dropped so the database isn't hidden — while its summary page reads `rust · vue · javascript · postgres`. A single-language repo still fills the row from stack: Chip-8 is 100% Rust to Linguist, so its card reads `rust · vue · wasm` and its summary page adds `eframe`.
 
 Selection lives in `src/lib/stack.ts`, not in the data layer. How many to show is a display decision and it differs per surface, so the API layer applies only the floor and returns everything above it.
 
