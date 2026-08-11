@@ -31,6 +31,11 @@
   --color-green-text:   #789665;
   --color-orange:       #a8542e;
   --color-orange-deep:  #5c2c17;
+  /* Sienna lightened to clear 4.5:1 on bg-raised. --color-orange is 2.84:1
+     there — below even the 3:1 graphics floor — so it can mark a chart bar
+     but must never set type. Same hue and saturation, brighter only.
+     Mirrors --color-green-text. */
+  --color-orange-text:  #ce764e;
 
   /* Type */
   --font-body: "Recursive", ui-monospace, SFMono-Regular, monospace;

@@ -38,6 +38,7 @@ const path = Astro.url.pathname;
 // there, and two adjacent controls for the same destination is noise.
 const navItems = [
   { href: '/projects', label: 'projects' },
+  { href: '/blog', label: 'blog' },
   { href: '/about', label: 'about' },
   { href: '/resume', label: 'resume' },
   { href: '/contact', label: 'contact' },
@@ -70,6 +71,14 @@ const buildAbsolute = `${buildIso.slice(0, 16).replace('T', ' ')} UTC`;
     <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
     <link rel="manifest" href="/site.webmanifest" />
     <meta name="theme-color" content="#0f1c2a" />
+
+    <!-- Feed autodiscovery, so readers find it without being told the URL. -->
+    <link
+      rel="alternate"
+      type="application/rss+xml"
+      title="nebulouscode"
+      href="/rss.xml"
+    />
 
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />

@@ -37,4 +37,39 @@ const now = defineCollection({
   }),
 });
 
-export const collections = { projects, now };
+/**
+ * Blog posts.
+ *
+ * Unlike `projects`, there is no explicit `slug` field — the URL comes from
+ * the filename. A post has no counterpart in src/config/projects.ts to stay in
+ * sync with, so deriving the slug removes a whole class of mismatch bug.
+ *
+ * `publishedAt` doubles as the release gate: a future date means scheduled,
+ * and the post simply doesn't exist until a build runs after that timestamp.
+ * Nothing here reads that field directly — see getPublishedPosts() in
+ * src/lib/content.ts, which every consumer must go through.
+ *
+ * `category` is deliberately a plain string rather than an enum. An unknown
+ * value warns at build time and fails `npm run validate:content`, but it must
+ * never block a scheduled post from going out on time.
+ *
+ * There is no `languages` field on purpose: the `project` link already
+ * supplies language, stack, and repo, and a second source would drift.
+ * See docs/POST_TAXONOMY.md and src/config/taxonomy.ts.
+ */
+const blog = defineCollection({
+  loader: glob({ pattern: '**/*.{md,mdx}', base: './src/content/blog' }),
+  schema: z.object({
+    title: z.string(),
+    summary: z.string(),
+    publishedAt: z.coerce.date(),
+    updatedAt: z.coerce.date().optional(),
+    category: z.string(),
+    tags: z.array(z.string()).default([]),
+    // Slug of an entry in PROJECTS, when the post is about a tracked project.
+    project: z.string().optional(),
+    draft: z.boolean().default(false),
+  }),
+});
+
+export const collections = { projects, now, blog };

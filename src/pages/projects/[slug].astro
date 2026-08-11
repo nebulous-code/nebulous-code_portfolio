@@ -12,11 +12,19 @@
  */
 
 import BaseLayout from '~/layouts/BaseLayout.astro';
+import Eyebrow from '~/components/Eyebrow.astro';
 import PageHeader from '~/components/PageHeader.astro';
 import ProjectLinks from '~/components/ProjectLinks.astro';
+import PostCard from '~/components/PostCard.astro';
+import ProjectStatsGrid from '~/components/ProjectStatsGrid.astro';
 import Prose from '~/components/Prose.astro';
 import { getCollection, render } from 'astro:content';
 import { getProjectBySlug } from '~/config/projects';
+import Badge from '~/components/Badge.astro';
+import { getPostsForProject, slugify } from '~/lib/content';
+import { allTech } from '~/lib/stack';
+import { GITHUB_USERNAME } from '~/config/projects';
+import { getProjectActivity, getProjectStats } from '~/lib/github';
 
 export async function getStaticPaths() {
   const entries = await getCollection('projects');
@@ -33,6 +41,21 @@ const project = getProjectBySlug(entry.data.slug);
 // Prefer the explicit updatedAt when the writeup has been revised; otherwise
 // the publish date is the last time this page was accurate.
 const lastUpdated = entry.data.updatedAt ?? entry.data.publishedAt;
+
+// Posts written about this project. Released posts only — this goes through
+// getPublishedPosts, so a scheduled writeup can't surface here early.
+const relatedPosts = await getPostsForProject(entry.data.slug);
+
+// The summary page has room, so it shows every technology rather than the
+// featured three the cards use. Languages still respect the byte-share floor;
+// every asserted stack entry appears.
+const [allStats, allActivity] = await Promise.all([
+  getProjectStats(GITHUB_USERNAME),
+  getProjectActivity(GITHUB_USERNAME),
+]);
+const stats = project ? allStats.find((s) => s.repo === project.repo) : undefined;
+const activity = project ? allActivity.find((a) => a.repo === project.repo) : undefined;
+const tech = allTech(stats?.languages ?? [], project?.stack ?? []);
 ---
 
 <BaseLayout title={`${entry.data.title} — nebulous-code`} description={entry.data.summary}>
@@ -43,7 +66,24 @@ const lastUpdated = entry.data.updatedAt ?? entry.data.publishedAt;
         title={entry.data.title}
         lede={entry.data.summary}
       >
-        <ProjectLinks project={project} />
+        <div class="header-block">
+          {tech.length > 0 ? <p class="tech">{tech.join(' · ')}</p> : null}
+
+          {entry.data.tags.length > 0 ? (
+            <div class="chips">
+              {entry.data.tags.map((tag) => (
+                <a class="chip-link" href={`/tags/${slugify(tag)}`}>
+                  <Badge tone="blue">{tag}</Badge>
+                </a>
+              ))}
+            </div>
+          ) : null}
+          <ProjectLinks project={project} />
+
+          {/* The same strip the card shows, kept at the top of the page so the
+              numbers stay in view while reading the writeup. */}
+          <ProjectStatsGrid activity={activity} stats={stats} />
+        </div>
       </PageHeader>
 
       <div class="body">
@@ -51,6 +91,18 @@ const lastUpdated = entry.data.updatedAt ?? entry.data.publishedAt;
           <Content />
         </Prose>
       </div>
+
+      {relatedPosts.length > 0 ? (
+        <section class="writing">
+          <hr class="divider" />
+          <div class="writing-inner">
+            <Eyebrow>writing</Eyebrow>
+            <div class="post-cards">
+              {relatedPosts.map((post) => <PostCard post={post} />)}
+            </div>
+          </div>
+        </section>
+      ) : null}
 
       <hr class="divider" />
 
@@ -62,6 +114,37 @@ const lastUpdated = entry.data.updatedAt ?? entry.data.publishedAt;
 </BaseLayout>
 
 <style>
+  /* Tags are the axis shared with blog posts — a summary and a post about the
+     same subject meet on the same /tags/ page. Categories don't appear here:
+     a summary has no form or tone to describe. */
+  .header-block {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-6);
+    width: 100%;
+  }
+
+  /* Everything, not the featured three — measured languages then asserted
+     stack. Same green as the project card so the same fact reads the same. */
+  .tech {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    line-height: 1.4;
+    text-transform: lowercase;
+    color: var(--color-green-text);
+    margin: 0;
+  }
+
+  .chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+  }
+
+  .chip-link {
+    text-decoration: none;
+  }
+
   .divider {
     border: 0;
     border-top: 1px solid var(--color-line);
@@ -70,6 +153,24 @@ const lastUpdated = entry.data.updatedAt ?? entry.data.publishedAt;
 
   .body {
     padding-block: var(--space-10);
+  }
+
+  /*
+   * Posts written about this project. Hidden entirely when there are none,
+   * same rule as the activity sparkline — a labelled empty list reads as
+   * broken rather than as "nothing yet".
+   */
+  .writing-inner {
+    padding-block: var(--space-9);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-5);
+  }
+
+  .post-cards {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: var(--space-7);
   }
 
   /* Row layout lives in ProjectLinks; this only owns the spacing around it. */

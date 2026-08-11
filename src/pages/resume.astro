@@ -4,8 +4,9 @@ import ActionLink from '~/components/ActionLink.astro';
 import PageHeader from '~/components/PageHeader.astro';
 import Prose from '~/components/Prose.astro';
 
-// Bump this when the resume content actually changes.
-const LAST_UPDATED = new Date('2026-08-10');
+// The date on the PDF itself, not the day the page was touched — a visitor
+// judging freshness cares how old the resume is.
+const LAST_UPDATED = new Date('2025-06-01');
 ---
 
 <BaseLayout title="Resume — nebulous-code">

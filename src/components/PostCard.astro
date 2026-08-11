@@ -1,0 +1,210 @@
+---
+/**
+ * PostCard — one row in a blog listing.
+ *
+ * Used by /blog and all three taxonomy listings, so it lives here rather than
+ * being repeated four times.
+ *
+ * Three axes render three different ways, per docs/POST_TAXONOMY.md:
+ *   category  a line of sienna type — the form of the piece, single-valued
+ *   project   the link, with the languages it supplies in green beside it
+ *   tags      blue chips — the subject, and the axis shared with summaries
+ *
+ * Languages are never stored on a post. They come from the linked project, so
+ * the same fact can't drift between a post and the project card.
+ */
+
+import type { CollectionEntry } from 'astro:content';
+import ActionLink from './ActionLink.astro';
+import Badge from './Badge.astro';
+import Eyebrow from './Eyebrow.astro';
+import { getProjectBySlug } from '~/config/projects';
+import { getInheritedTech, slugify } from '~/lib/content';
+import { pickFeaturedTech } from '~/lib/stack';
+import { updatedLabel } from '~/lib/dates';
+
+interface Props {
+  post: CollectionEntry<'blog'>;
+}
+
+const { post } = Astro.props;
+const { title, summary, publishedAt, updatedAt, category, tags, project } = post.data;
+
+// Tech is inherited from the linked project, never stored on the post. The
+// card is compact, so it shows the featured three; the post page shows all.
+const linkedProject = project ? getProjectBySlug(project) : undefined;
+const tech = await getInheritedTech(post);
+const featured = pickFeaturedTech(tech.languages, tech.stack);
+
+const dateLabel = publishedAt.toLocaleDateString('en-US', {
+  year: 'numeric',
+  month: 'long',
+  day: 'numeric',
+  timeZone: 'UTC',
+});
+---
+
+<article class="post-card">
+  <div class="heading">
+    <Eyebrow>{dateLabel}</Eyebrow>
+    <h2 class="title">
+      <a href={`/blog/${post.id}`}>{title}</a>
+    </h2>
+  </div>
+
+  <p class="summary">{summary}</p>
+
+  <div class="taxonomy">
+    <p class="taxonomy-line">
+      {linkedProject ? (
+        <span class="seg">
+          <a class="project-link" href={`/projects/${linkedProject.slug}`}>
+            {linkedProject.name}
+          </a>
+        </span>
+      ) : null}
+      <span class="seg">
+        <a class="category" href={`/blog/category/${slugify(category)}`}>{category}</a>
+      </span>
+      {featured.length > 0 ? (
+        <span class="seg tech">{featured.join(' · ')}</span>
+      ) : null}
+    </p>
+
+    {tags.length > 0 ? (
+      <div class="chips">
+        {tags.map((tag) => (
+          <a class="chip-link" href={`/tags/${slugify(tag)}`}>
+            <Badge tone="blue">{tag}</Badge>
+          </a>
+        ))}
+      </div>
+    ) : null}
+  </div>
+
+  <div class="footer">
+    {updatedAt ? <Eyebrow>{updatedLabel(updatedAt)}</Eyebrow> : <span />}
+    <ActionLink href={`/blog/${post.id}`} tone="muted">read post</ActionLink>
+  </div>
+</article>
+
+<style>
+  .post-card {
+    background: var(--color-bg-raised);
+    border: 1px solid var(--color-line);
+    border-radius: var(--radius-lg);
+    padding: var(--space-8);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-6);
+  }
+
+  .heading {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+    min-width: 0;
+  }
+
+  .title {
+    font-family: var(--font-serif);
+    font-size: 22px;
+    line-height: 1.2;
+    font-weight: 500;
+    letter-spacing: -0.01em;
+    margin: 0;
+  }
+
+  .title a {
+    color: var(--color-ink);
+    text-decoration: none;
+  }
+
+  .title a:hover {
+    color: var(--color-blue);
+  }
+
+  .summary {
+    font-family: var(--font-body);
+    font-variation-settings: "MONO" 1, "CASL" 1, "wght" 400;
+    font-size: 14px;
+    line-height: 1.55;
+    color: var(--color-ink-muted);
+    margin: 0;
+  }
+
+  .taxonomy {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4);
+    align-items: flex-start;
+  }
+
+  /*
+   * Project, then category, then technology — one line, in that order. Each
+   * answers a different question ("which thing", "what kind of writing",
+   * "built with what"), and reading them in sequence is how someone would
+   * say it out loud. Dots come from the separator rule below so a missing
+   * project or an empty tech list can't leave a stray one behind.
+   */
+  .taxonomy-line {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: var(--space-2);
+    font-family: var(--font-mono);
+    font-size: 11px;
+    line-height: 1.4;
+    margin: 0;
+  }
+
+  /* The separator hangs off a wrapper span, never off the anchor itself — a
+     ::before on a link is inside that link, so the dot would be clickable and
+     would underline on hover along with the label. */
+  .seg + .seg::before {
+    content: "· ";
+    color: var(--color-ink-faint);
+  }
+
+  .project-link {
+    color: var(--color-ink-muted);
+    text-decoration: none;
+  }
+
+  .project-link:hover {
+    color: var(--color-ink);
+  }
+
+  .category {
+    color: var(--color-orange-text);
+    text-transform: lowercase;
+    text-decoration: none;
+  }
+
+  .category:hover {
+    text-decoration: underline;
+  }
+
+  .tech {
+    color: var(--color-green-text);
+    text-transform: lowercase;
+  }
+
+  .chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+  }
+
+  .chip-link {
+    text-decoration: none;
+  }
+
+  .footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: var(--space-5);
+    margin-top: var(--space-2);
+  }
+</style>

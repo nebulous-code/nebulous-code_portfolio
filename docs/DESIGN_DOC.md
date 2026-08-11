@@ -55,6 +55,7 @@ All colors below are the canonical hex values. Use these names as CSS custom pro
 | `green-text` | `#789665` | Moss lightened until it clears 4.5:1 on `bg-raised`. Use whenever moss has to be *readable copy* rather than a fill or a mark — `green` itself is only 3.9:1 at body size. Same hue and saturation, brighter only. |
 | `orange` | `#a8542e` | Burnt sienna. The "highlight / release / latest" color. Latest-day chart bar, version tags, callouts, hover states on certain links. |
 | `orange-deep` | `#5c2c17` | Sienna fill. Filled buttons (rare), highlighted card backgrounds. |
+| `orange-text` | `#ce764e` | Sienna lightened until it clears 4.5:1 on `bg-raised`. Use whenever sienna has to be *readable copy* — `orange` is 2.84:1 there, which fails even the graphics floor. Same hue and saturation, brighter only. |
 
 **When to reach for which accent**
 - **Blue** is the workhorse. If you're not sure, use blue. Most buttons, all links, default chart bars.
@@ -172,17 +173,27 @@ Don't use them. The system is flat. If something needs to "lift," raise its surf
 
 One component owns this: `src/components/ActionLink.astro`. It appends the arrow and adds `target="_blank" rel="noopener"` to off-site hrefs, so neither can be forgotten at a call site.
 
-**The arrow is the tell.** A trailing `→` means "this navigates somewhere," and it is what marks an element as a call to action. Links that are *not* calls to action never carry one:
+**The arrow is the tell**, and it points the way you travel:
+
+| Direction | Form | Meaning |
+|---|---|---|
+| forward | `label →` | takes you onward — a project, a demo, a post, a download |
+| back | `← label` | returns you to where you came from — `← all projects`, `← all posts` |
+
+Both are `ActionLink` with `direction`; the arrow and its side are the component's job, never the call site's. A back link is still a call to action, so it behaves like one — same font, same tones, underline on hover. Only the arrow differs.
+
+Links that are *not* calls to action never carry an arrow at all:
 
 - inline links inside running prose
-- project card titles (they shift color instead)
+- project card and post card titles (they shift color instead)
 - contact channel values in the KPI grid
-- the back link `← all projects`, whose leading arrow means return, and which brightens rather than underlining
+- taxonomy chips
 
 **Forbidden**
 
 - Outlined buttons. Filled buttons. Anything `<button>`-shaped used for navigation.
 - A call to action without an arrow, or an arrow on a link that doesn't navigate.
+- An arrow pointing the wrong way for the direction of travel.
 
 ### Page header (every page)
 
@@ -226,6 +237,113 @@ A grid of small stat cells. The pattern:
 
 A 1px stroke with a terminal end-cap was the original spec, and it was built. Real commit data killed it: the work here is bursty — a handful of active days separated by long gaps — so at 120px wide a polyline rendered each burst as a one-pixel needle on a flat line. Bars survive sparse data; strokes don't. Weekly buckets rather than daily for the same reason: 91 daily bars at that width are sub-pixel.
 
+### The technology row
+
+Appears on project cards, project summary pages, post cards, and post pages. Always `green-text`, mono 11px, lowercase, middle-dot separated — the same fact reads the same way everywhere it shows up.
+
+**Two sources, merged for display:**
+
+| Source | Origin | Behaviour |
+|---|---|---|
+| languages | GitHub languages API | measured; re-derived every build; filtered to ≥12% of repo bytes |
+| `stack` | `src/config/projects.ts` | asserted by hand; always shown |
+
+`stack` exists because the API measures *bytes of code*, so anything used rather than written is invisible to it. The card dashboard reports no SQL at all — 0.06% Mako from Alembic templates is its only database trace. Merged for display because a reader doesn't care which half was counted; kept separate in config because only one half self-corrects.
+
+**How many show, by surface:**
+
+| Surface | Rule |
+|---|---|
+| project card, post card | **three at most**, guaranteeing at least one language and one stack entry when both exist; a spare slot goes to a language first |
+| project summary, post page | **everything** |
+
+The guarantee is the point. Quiet-Cube's card reads `rust · vue · postgres` — JavaScript is dropped so the database isn't hidden — while its summary page reads `rust · vue · javascript · postgres`. A single-language repo still fills the row from stack: Chip-8 shows `rust · cargo · tauri`.
+
+Selection lives in `src/lib/stack.ts`, not in the data layer. How many to show is a display decision and it differs per surface, so the API layer applies only the floor and returns everything above it.
+
+**Posts never store any of this.** A post inherits its technology row from the project it links to, so the same fact can't drift between a post and the project card.
+
+### Reuse over resemblance
+
+`ProjectCard` and `PostCard` are the only two card designs. Every surface that lists projects or posts renders one of them:
+
+| Surface | Renders |
+|---|---|
+| `/`, `/projects` | `ProjectCard` |
+| `/blog`, `/blog/category/…` | `PostCard` |
+| `/tags/…` | both — projects pinned above posts |
+| project summary, "Writing" section | `PostCard` |
+
+A tag page that hand-rolled its own list would be a third card design drifting from the other two the first time either changed. Same reasoning as `PageHeader` and `ProjectStatsGrid`: if a block appears twice, it becomes a component.
+
+`ProjectStatsGrid` follows the same rule — the four-cell KPI strip appears on the project card *and* at the top of the summary page, so the numbers stay in view while reading the writeup. One component, one set of labels, one relative-date helper (`src/lib/dates.ts`) shared with the active/idle badge so a commit can't be described two ways on one card.
+
+### Post card (blog listing)
+
+One row in `/blog` and in every taxonomy listing. Same card shell as the project card — `bg-raised`, 1px `line`, `radius-lg`, 22px Source Serif title — so the two read as siblings.
+
+1. Eyebrow date + title, stacked.
+2. Summary: mono-casual body, 14px, `ink-muted`.
+3. **Taxonomy line** — project, category, technology. One line, that order.
+4. **Tag chips** — `blue`, linking to `/tags/…`.
+5. Footer: freshness stamp on the left when the post has been revised, `read post →` on the right.
+
+#### The taxonomy line
+
+Mono 11px, middle-dot separated, in a fixed order because each part answers a different question and reading them in sequence is how someone would say it aloud:
+
+| Segment | Question | Colour |
+|---|---|---|
+| project | which thing is this about | `ink-muted`, links to the summary |
+| category | what kind of writing is this | `orange-text`, links to the category |
+| technology | built with what | `green-text`, inherited from the project |
+
+Any segment can be absent — a post with no project starts at the category.
+
+**Separators hang off a wrapper span, never off the anchor.** A `::before` on a link is *inside* that link, which makes the dot clickable and underlines it on hover along with the label. Each segment is wrapped in `.seg`, and the rule is `.seg + .seg::before`. That also means a missing segment can't strand a leading dot.
+
+**Chips are for tags only.** They're the many-valued, free-form axis, the axis shared with project summaries, and the only thing here a reader browses sideways into.
+
+### Taxonomy vocabularies
+
+**`docs/POST_TAXONOMY.md` is the source of truth** for what the axes mean, the closed list of eight categories, and how to choose between them. What follows is only how they render.
+
+Three axes, and they answer three different questions. Keeping them separate is what makes filtering useful instead of noisy.
+
+| Axis | Question | Cardinality | Reserved? |
+|---|---|---|---|
+| `project` | **Which thing is this about?** A link, not a string. | zero or one | n/a |
+| `category` | **How is this written?** The form of the piece. | exactly one | yes, closed at eight |
+| `tags` | **What is it about?** The subject. | zero or more | no |
+
+There is deliberately **no `languages` axis**. It existed briefly and was removed: linking a post to a project already supplies language, stack, and repo, so storing them again would create a second source that drifts. A post linked to `chip8-emulator` renders `rust` without anyone typing it, pulled from the same GitHub-derived data the project card uses.
+
+#### category — the form, never the subject
+
+Renders as a line of type, not a chip — see the post card below. Lives at `/blog/category/…`.
+
+Categories apply to posts only. A project summary has no form or tone to describe, so the axis doesn't reach it.
+
+#### project — a link, and what it gives you for free
+
+Sits at the same taxonomy level as category: a grouping you can browse by. The project summary page *is* that grouping page, since it already lists the posts written about it.
+
+Linking also inherits the project's whole technology row — measured languages and asserted stack both — rendered in `green-text` beside the project name.
+
+#### tags — the subject, spanning both content types
+
+Tags are the one axis shared by posts **and** project summaries, which is what connects them: `pokemon` surfaces the card dashboard alongside any Pokémon posts. That's why they live at site level, **`/tags/<tag>` is canonical for every tag**, rather than under `/blog/`. Those pages list project summaries first, then posts.
+
+**Tags are written in MDX frontmatter and nowhere else** — for posts and project summaries alike. `src/config/projects.ts` deliberately has no `tags` field; a second list would drift from the first.
+
+A tag is anything not derivable from the project link. Languages, frameworks, and stack never become tags — the link covers those, and `stack` closes the gap where the languages API can't see something.
+
+#### Enforcement
+
+**An unknown reserved value warns; it never blocks.** A typo must not stop a scheduled post from publishing on time. The build logs a `[blog]` warning and ships; `npm run validate:content` fails, in its own CI workflow, off the release path. See `MAINTENANCE.md`.
+
+Tags have no such check — nothing can validate a free-form vocabulary. Re-read this section when adding one.
+
 ### Inputs
 
 - `background: bg-inset`, `border: 1px solid line`, `border-radius: 4px`, `padding: 8px 12px`, mono 13px, `color: ink`.
@@ -237,7 +355,7 @@ A 1px stroke with a terminal end-cap was the original spec, and it was built. Re
 The project card is the system's most important component. Structure:
 1. Eyebrow + title row: eyebrow ("project · active") in `ink-faint`, title in Source Serif 4. Status badge (top-right) in the relevant accent.
 2. Description: 1–2 lines, mono 12px, `ink-muted`.
-3. Language row: up to three dominant languages, middle-dot separated, lowercase, mono 11px, `green-text`.
+3. Technology row: middle-dot separated, lowercase, mono 11px, `green-text`. **Three at most on a card; everything on a summary page.** See "The technology row" below.
 4. KPI grid: 4 cells — last push, latest release, total commits, commits 30d.
 5. Footer row: activity chart on the left under an eyebrow label, calls to action on the right — `project summary →` in `ink-muted`, the live link in blue, in that order so the primary action lands on the far edge.
 
@@ -245,7 +363,7 @@ The project card is the system's most important component. Structure:
 
 **A cell only exists if it can be populated.** "Open PRs" was specified here and cut after it read `0` on every card — a row of zeros reads deader than a dash, because a dash says "not applicable" while a zero says "nothing is happening." Check the real data before adding a cell.
 
-**Languages carry a 12% floor** and a cap of three. Without a floor the row fills with build output and stray config; the floor is set where it is because a flagship project's second language sat at 14.7%.
+**Languages carry a 12% floor.** Without one the row fills with build output and stray config; the floor sits where it does because a flagship project's second language was at 14.7%. The *cap* is not applied here — see below.
 
 ---
 
@@ -285,6 +403,7 @@ Not strictly visual, but the design depends on copy holding its end up.
   --color-green-text: #789665;
   --color-orange:     #a8542e;
   --color-orange-deep:#5c2c17;
+  --color-orange-text:#ce764e;
 
   /* Type */
   --font-mono:    "Departure Mono", ui-monospace, SFMono-Regular, monospace;
@@ -364,7 +483,8 @@ h1, h2, h3, .display, .lede {
 - `green` on `bg`: ≈ 4.7:1. AA for large text only — don't use moss for body-size text on the page background. It's a fill/badge color, not a copy color. On `bg-raised` (inside a card) it drops to 3.9:1, which is below AA for text but still clears the 3:1 floor WCAG applies to non-text graphics — which is why the activity bars may be `green` while the language row beside them must not.
 - `green-text` on `bg-raised`: ≈ 4.5:1. This is the moss to use when the thing is *copy*. Reach for it rather than shrinking or bolding `green` into compliance.
 - Measure, don't estimate. Every ratio in this section was computed against the actual token pair, not eyeballed. A color that looks fine on a card can be a point-and-a-half short.
-- `orange` on `bg`: ≈ 4.1:1. Borderline AA large. Treat as a marker color, not a text color. If you must set type in `orange`, make it ≥14px and 500 weight.
+- `orange` on `bg`: ≈ 4.1:1. Borderline AA large. Treat as a marker color, not a text color. On `bg-raised` it collapses to **2.84:1** — below even the 3:1 non-text floor, so inside a card it can't legitimately mark a graphic either.
+- `orange-text` on `bg-raised`: ≈ 4.5:1. This is the sienna for anything that is *copy*. The category line on a post card uses it. Never reach for `orange` and compensate with size or weight — reach for this.
 - Never communicate state with color alone. The active badge is `green` *and* says "active." The latest push bar is `orange` *and* sits at the rightmost position.
 
 ---

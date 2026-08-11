@@ -368,8 +368,15 @@ export async function getProjectActivity(
  * shown. Without a floor the list fills with build output and stray config —
  * a 394-byte HTML file is not something the project is "written in".
  */
+/**
+ * Byte-share floor. Without it the list fills with build output and stray
+ * config — a 394-byte HTML file is not something a project is "written in".
+ *
+ * There is deliberately no cap here. How many to show is a display decision,
+ * and it differs by surface: cards show three, summary pages show everything.
+ * See src/lib/stack.ts.
+ */
 const LANGUAGE_FLOOR = 0.12;
-const MAX_LANGUAGES = 3;
 
 /**
  * Window for the per-card activity chart. Weekly rather than daily buckets
@@ -418,7 +425,19 @@ function weeklyBuckets(daily: Map<string, number>): ActivityPoint[] {
  * having no releases at all) degrades that single cell to null rather than
  * taking down the card or the build.
  */
-export async function getProjectStats(username: string): Promise<ProjectStats[]> {
+/**
+ * Memoised for the lifetime of a build. Several pages need these stats now
+ * that blog posts inherit languages from their linked project, and every one
+ * of them would otherwise re-run the same dozen API calls.
+ */
+let statsPromise: Promise<ProjectStats[]> | null = null;
+
+export function getProjectStats(username: string): Promise<ProjectStats[]> {
+  statsPromise ??= fetchProjectStats(username);
+  return statsPromise;
+}
+
+async function fetchProjectStats(username: string): Promise<ProjectStats[]> {
   const repos = getTrackedRepos();
   const allowlist = getContentAllowlist();
   const since = new Date(
@@ -499,7 +518,6 @@ export async function getProjectStats(username: string): Promise<ProjectStats[]>
           // An unusually even split can leave nothing above the floor; still
           // show the leader rather than an empty row.
           stats.languages = (major.length > 0 ? major : ranked.slice(0, 1))
-            .slice(0, MAX_LANGUAGES)
             .map(([name]) => name);
         }
       } catch (err) {

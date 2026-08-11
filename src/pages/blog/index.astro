@@ -1,0 +1,52 @@
+---
+import BaseLayout from '~/layouts/BaseLayout.astro';
+import PageHeader from '~/components/PageHeader.astro';
+import PostCard from '~/components/PostCard.astro';
+import { getPublishedPosts } from '~/lib/content';
+
+// getPublishedPosts, never getCollection — see the note on that function.
+const posts = await getPublishedPosts();
+const latest = posts[0]?.data.publishedAt;
+---
+
+<BaseLayout
+  title="Blog — nebulous-code"
+  description="Writing about the things I build."
+>
+  <div class="container-wide">
+    <PageHeader
+      updated={latest}
+      title="Blog"
+      lede="Notes on the things I'm building — the decisions, the dead ends, and what I'd do differently."
+    />
+
+    <section class="section">
+      {posts.length > 0 ? (
+        <div class="post-list">
+          {posts.map((post) => <PostCard post={post} />)}
+        </div>
+      ) : (
+        <p class="empty">Nothing published yet.</p>
+      )}
+    </section>
+  </div>
+</BaseLayout>
+
+<style>
+  .section {
+    padding-block: var(--space-10);
+  }
+
+  .post-list {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: var(--space-7);
+  }
+
+  .empty {
+    font-family: var(--font-mono);
+    font-size: 13px;
+    color: var(--color-ink-muted);
+    margin: 0;
+  }
+</style>

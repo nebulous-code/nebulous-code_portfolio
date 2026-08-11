@@ -1,0 +1,111 @@
+---
+/**
+ * A tag listing.
+ *
+ * Lives at /tags/ rather than under /blog/ because tags span both content
+ * types — they are what connects a post to the project summary it relates to.
+ * Categories stay under /blog/, since a summary has no form or tone to
+ * describe and the axis doesn't apply to it.
+ *
+ * Renders the same ProjectCard and PostCard used on /projects and /blog. A
+ * bespoke list here would be a fourth place card markup lives, and it would
+ * drift the first time either card changed.
+ */
+
+import BaseLayout from '~/layouts/BaseLayout.astro';
+import ActionLink from '~/components/ActionLink.astro';
+import PageHeader from '~/components/PageHeader.astro';
+import PostCard from '~/components/PostCard.astro';
+import ProjectCard from '~/components/ProjectCard.astro';
+import type { CollectionEntry } from 'astro:content';
+import { GITHUB_USERNAME, getProjectBySlug } from '~/config/projects';
+import type { ProjectConfig } from '~/config/projects';
+import { getItemsByTag, getTagValues } from '~/lib/content';
+import { getProjectActivity, getProjectStats } from '~/lib/github';
+
+export async function getStaticPaths() {
+  const values = await getTagValues();
+  return values.map(({ value, slug }) => ({
+    params: { tag: slug },
+    props: { value },
+  }));
+}
+
+const { value } = Astro.props;
+const { tag } = Astro.params;
+const items = await getItemsByTag(tag!);
+
+// Project cards need the same live data they get on /projects. Both fetches
+// are memoised for the build, so listing them here costs nothing extra.
+const [projectActivity, projectStats] = await Promise.all([
+  getProjectActivity(GITHUB_USERNAME),
+  getProjectStats(GITHUB_USERNAME),
+]);
+const activityByRepo = new Map(projectActivity.map((p) => [p.repo, p]));
+const statsByRepo = new Map(projectStats.map((s) => [s.repo, s]));
+
+// Resolve project entries to their config up front. A summary with no PROJECTS
+// entry is dropped rather than rendered as a broken card.
+type TagCard =
+  | { kind: 'project'; project: ProjectConfig }
+  | { kind: 'post'; post: CollectionEntry<'blog'> };
+
+const cards: TagCard[] = items.flatMap((item): TagCard[] => {
+  if (item.kind === 'post') return [{ kind: 'post', post: item.post }];
+  const project = getProjectBySlug(item.entry.data.slug);
+  return project ? [{ kind: 'project', project }] : [];
+});
+
+const posts = cards.filter((c) => c.kind === 'post').length;
+const projects = cards.length - posts;
+const parts = [
+  projects > 0 ? `${projects} project${projects === 1 ? '' : 's'}` : null,
+  posts > 0 ? `${posts} post${posts === 1 ? '' : 's'}` : null,
+].filter(Boolean);
+---
+
+<BaseLayout title={`${value} — nebulous-code`} description={`Writing and projects tagged ${value}.`}>
+  <div class="container-wide">
+    <PageHeader
+      eyebrow="TAG"
+      title={value}
+      lede={`${parts.join(' and ')} tagged ${value}.`}
+    />
+
+    <section class="section">
+      <div class="cards">
+        {cards.map((card) =>
+          card.kind === 'project' ? (
+            <ProjectCard
+              project={card.project}
+              activity={activityByRepo.get(card.project.repo)}
+              stats={statsByRepo.get(card.project.repo)}
+            />
+          ) : (
+            <PostCard post={card.post} />
+          ),
+        )}
+      </div>
+
+      <div class="page-cta">
+        <ActionLink href="/blog" tone="muted" direction="back">all posts</ActionLink>
+      </div>
+    </section>
+  </div>
+</BaseLayout>
+
+<style>
+  .section {
+    padding-block: var(--space-10);
+  }
+
+  .cards {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: var(--space-7);
+  }
+
+  .page-cta {
+    margin-top: var(--space-11);
+  }
+</style>

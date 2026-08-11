@@ -29,6 +29,13 @@ interface Props {
    * italic summary directly above them.
    */
   size?: 'default' | 'large';
+  /**
+   * Which way the arrow points, and therefore which side it sits on.
+   * 'forward' (default) takes you onward: `label →`. 'back' returns you to
+   * where you came from: `← label`. The direction of travel is the whole
+   * signal, so it belongs to the component rather than each call site.
+   */
+  direction?: 'forward' | 'back';
   class?: string;
 }
 
@@ -36,8 +43,12 @@ const {
   href,
   tone = 'primary',
   size = 'default',
+  direction = 'forward',
   class: className = '',
 } = Astro.props;
+
+const prefix = direction === 'back' ? '← ' : '';
+const suffix = direction === 'back' ? '' : ' →';
 
 const isExternal = /^https?:\/\//.test(href);
 const externalAttrs = isExternal
@@ -50,7 +61,7 @@ const externalAttrs = isExternal
   class:list={['action-link', tone, { large: size === 'large' }, className]}
   {...externalAttrs}
 >
-  <slot /> →
+  {prefix}<slot />{suffix}
 </a>
 
 <style>

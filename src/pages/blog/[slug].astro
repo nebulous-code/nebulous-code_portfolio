@@ -1,0 +1,171 @@
+---
+/**
+ * A single blog post.
+ *
+ * getStaticPaths is built from getPublishedPosts, so an unreleased or draft
+ * post has no route at all — its URL 404s rather than sitting unlinked but
+ * reachable by anyone who guesses it.
+ */
+
+import BaseLayout from '~/layouts/BaseLayout.astro';
+import ActionLink from '~/components/ActionLink.astro';
+import Badge from '~/components/Badge.astro';
+import PageHeader from '~/components/PageHeader.astro';
+import Prose from '~/components/Prose.astro';
+import { render } from 'astro:content';
+import { getProjectBySlug } from '~/config/projects';
+import { getInheritedTech, getPublishedPosts, slugify } from '~/lib/content';
+import { allTech } from '~/lib/stack';
+
+export async function getStaticPaths() {
+  const posts = await getPublishedPosts();
+  return posts.map((post) => ({
+    params: { slug: post.id },
+    props: { post },
+  }));
+}
+
+const { post } = Astro.props;
+const { Content } = await render(post);
+const { title, summary, publishedAt, updatedAt, category, tags, project } = post.data;
+
+const relatedProject = project ? getProjectBySlug(project) : undefined;
+// Inherited from the project, never stored on the post. A post page has room,
+// so it shows everything rather than the featured three.
+const tech = await getInheritedTech(post);
+const languages = allTech(tech.languages, tech.stack);
+---
+
+<BaseLayout title={`${title} — nebulous-code`} description={summary}>
+  <div class="container-narrow">
+    <article>
+      <PageHeader updated={updatedAt ?? publishedAt} title={title} lede={summary}>
+        <div class="taxonomy">
+          <p class="taxonomy-line">
+            {relatedProject ? (
+              <span class="seg">
+                <a class="project-link" href={`/projects/${relatedProject.slug}`}>
+                  {relatedProject.name}
+                </a>
+              </span>
+            ) : null}
+            <span class="seg">
+              <a class="category" href={`/blog/category/${slugify(category)}`}>{category}</a>
+            </span>
+            {languages.length > 0 ? (
+              <span class="seg tech">{languages.join(' · ')}</span>
+            ) : null}
+          </p>
+
+          {tags.length > 0 ? (
+            <div class="chips">
+              {tags.map((tag) => (
+                <a class="chip-link" href={`/tags/${slugify(tag)}`}>
+                  <Badge tone="blue">{tag}</Badge>
+                </a>
+              ))}
+            </div>
+          ) : null}
+        </div>
+      </PageHeader>
+
+      <div class="body">
+        <Prose>
+          <Content />
+        </Prose>
+      </div>
+
+      <hr class="divider" />
+
+      <footer class="post-footer">
+        <ActionLink href="/blog" tone="muted" direction="back">all posts</ActionLink>
+        {relatedProject ? (
+          <ActionLink href={`/projects/${relatedProject.slug}`}>
+            part of {relatedProject.name}
+          </ActionLink>
+        ) : null}
+      </footer>
+    </article>
+  </div>
+</BaseLayout>
+
+<style>
+  .taxonomy {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4);
+  }
+
+  /* Project, then category, then technology — one line, in that order.
+     Matches the post card; see its comment for the reasoning. */
+  .taxonomy-line {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: var(--space-2);
+    font-family: var(--font-mono);
+    font-size: 11px;
+    line-height: 1.4;
+    margin: 0;
+  }
+
+  /* Separator on the wrapper, not the anchor — otherwise the dot is inside
+     the link and becomes clickable. */
+  .seg + .seg::before {
+    content: "· ";
+    color: var(--color-ink-faint);
+  }
+
+  .project-link {
+    color: var(--color-ink-muted);
+    text-decoration: none;
+  }
+
+  .project-link:hover {
+    color: var(--color-ink);
+  }
+
+  .category {
+    color: var(--color-orange-text);
+    text-transform: lowercase;
+    text-decoration: none;
+  }
+
+  .category:hover {
+    text-decoration: underline;
+  }
+
+  .tech {
+    color: var(--color-green-text);
+    text-transform: lowercase;
+  }
+
+  .chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+  }
+
+  .chip-link {
+    text-decoration: none;
+  }
+
+  .divider {
+    border: 0;
+    border-top: 1px solid var(--color-line);
+    margin: 0;
+  }
+
+  .body {
+    padding-block: var(--space-10);
+  }
+
+  .post-footer {
+    padding-block: var(--space-9);
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: center;
+    gap: var(--space-7);
+  }
+</style>

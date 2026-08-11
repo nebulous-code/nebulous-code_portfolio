@@ -7,6 +7,10 @@ import tailwindcss from '@tailwindcss/vite';
 export default defineConfig({
   site: 'https://nebulouscode.com',
   integrations: [mdx()],
+  // Applies to both `astro dev` and `astro preview`. host: true binds every
+  // interface so other machines on the network can reach it — note that on
+  // this box that includes the Tailscale address, not just the LAN.
+  server: { host: true, port: 7575 },
   vite: {
     plugins: [tailwindcss()],
     define: {

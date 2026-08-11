@@ -43,7 +43,7 @@ The next build will pick up fresh data within ~2 minutes.
      allowlistContent: true,
      liveUrl: 'https://my-new-project.nebulouscode.com', // optional
      linkKind: 'product', // 'demo' (default) or 'product'
-     tags: ['vue', 'whatever'],
+     stack: ['postgres'], // optional: tech Linguist can't see
    }
    ```
 
@@ -56,7 +56,7 @@ The next build will pick up fresh data within ~2 minutes.
    summary: One-sentence summary.
    publishedAt: 2026-MM-DD
    tags:
-     - vue
+     - subject_tag
    hasArchitectureSection: false
    ---
 
@@ -65,6 +65,21 @@ The next build will pick up fresh data within ~2 minutes.
    ```
 
 3. Commit and push. Next scheduled rebuild (or manual trigger) picks it up.
+
+**Tags live in the MDX, not in `projects.ts`.** That's the canonical list, and it's the same axis blog posts use — `/tags/<tag>` shows summaries and posts together.
+
+**Tags are subjects, not stack.** `emulator`, `pokemon`, `rubiks_cube` — never `rust`, `vue`, `postgres`. Languages come from the repo automatically and anything Linguist can't see goes in `stack`. See `docs/POST_TAXONOMY.md`.
+
+### How the technology row is built
+
+Two sources, merged for display:
+
+| Source | Where | Behaviour |
+|---|---|---|
+| languages | GitHub languages API | measured, re-derived every build, filtered to ≥12% of bytes |
+| `stack` | `src/config/projects.ts` | asserted by hand, always shown |
+
+**Cards show three**, guaranteeing at least one of each kind when both exist, with any spare slot going to a language first. **Summary and post pages show everything.** So Quiet-Cube's card reads `rust · vue · postgres` — JavaScript is dropped so the database isn't hidden — while its summary page reads `rust · vue · javascript · postgres`.
 
 ### Field reference
 
@@ -79,7 +94,74 @@ The next build will pick up fresh data within ~2 minutes.
 | `allowlistContent` | Opt-in to showing commit messages, SHAs, branch names. Default-deny. Should always be `false` if `visibility !== 'public'`. |
 | `liveUrl` | Where a visitor can use the thing. Shown on the card and the summary page. Omit if there's nowhere to send them yet. |
 | `linkKind` | How `liveUrl` is labeled: `'demo'` (default) or `'product'`. Independent of `visibility` — an open repo can still be a real product. |
-| `tags` | Free-form tags for filtering. |
+| `stack` | Technologies the GitHub languages API can't see, because they're used rather than written — Postgres, Docker, a framework. Merged with the measured languages for display. Typed as a union, so a typo is a TypeScript error. |
+
+## Adding a blog post
+
+Create `src/content/blog/my-post.mdx`. **The filename is the URL** — this post lands at `/blog/my-post`.
+
+```mdx
+---
+title: Why TCGdex over the eBay API
+summary: One or two sentences. Shown on listings and in the RSS feed.
+publishedAt: 2026-08-20        # release gate — see below
+updatedAt: 2026-08-25          # optional
+category: design_decisions     # exactly one, from src/config/taxonomy.ts
+tags:                          # optional, free-form subjects, snake_case
+  - pokemon
+project: pokemon-dashboard     # optional, a slug from src/config/projects.ts
+draft: false                   # optional, defaults to false
+---
+
+## A heading
+
+Body copy.
+```
+
+Then `npm run validate:content` before committing.
+
+### Scheduling
+
+`publishedAt` is the release gate. A post dated in the future doesn't exist on the site — no page, no listing entry, no RSS item, and its URL 404s — until a build runs after that timestamp.
+
+The cron fires every 6 hours, so **a post appears within 6 hours of its timestamp, not at a precise moment**. A date-only value (`2026-08-20`) is treated as UTC midnight and goes live at the 00:00 UTC build that day. For finer control use a full timestamp: `2026-08-20T14:00:00Z`.
+
+`draft: true` withholds a post regardless of date. Use it for something not ready; use a future date for something finished and scheduled.
+
+To release something early, change the date and either wait for the next cron or trigger a rebuild from the Actions tab.
+
+### Categories and tags
+
+**`docs/POST_TAXONOMY.md` is the source of truth** for what the axes mean and how to pick between them. Read it before adding a category.
+
+`category` is a closed list of eight in `src/config/taxonomy.ts`; `tags` are free-form subjects in snake_case.
+
+**There is no `languages` field.** Linking a post to a project supplies its languages automatically — they render beside the project name, pulled from the same GitHub data the project card uses. Never type a language, framework, or stack anywhere on a post; that's what the project link is for.
+
+**A typo never delays a release.** Two separate layers, on purpose:
+
+| | On a bad value |
+|---|---|
+| `npm run build` (what Render runs) | logs `[blog] unknown category …` and **publishes anyway** |
+| `npm run validate:content` | **exits 1**, naming the file and the value |
+
+The `validate-content` GitHub workflow runs the second one on every push and PR. It is deliberately separate from `scheduled-rebuild`, which never consults it. So a mistyped category turns one check red and delays nothing, and a failed deploy is never mistaken for a content error.
+
+Renaming a category after posts exist means editing their frontmatter and breaking any shared `/blog/category/…` URL — worth settling the vocabulary early.
+
+### Linking a post to a project
+
+Set `project:` to a slug from `src/config/projects.ts`. Three things happen:
+
+- that project's summary page grows a "Writing" section listing its posts (hidden when there are none)
+- the post links back to the project
+- the post **inherits the project's languages**, shown beside the project name
+
+Validation fails if the slug doesn't match a real project, so a rename can't silently orphan the link.
+
+### Tags reach project summaries too
+
+Project summary MDX files carry `tags` as well, and `/tags/<tag>` lists posts and summaries together — that shared axis is what connects the two content types. Categories don't apply to summaries; a summary has no form or tone to describe.
 
 ## Transitioning public → private SaaS
 

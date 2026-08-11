@@ -45,6 +45,22 @@ Three live signals on the home page reflect "what I'm currently working on":
 
 All three are baked at build time. Visitors load static HTML.
 
+## The blog
+
+Posts are MDX in `src/content/blog/`; the filename is the URL. `publishedAt` doubles as a release gate — a future-dated post has no page, no listing entry, no RSS item, and its URL 404s until a build runs after that timestamp. Since the cron fires every 6 hours, a post goes live within 6 hours of its date rather than at a precise moment. `draft: true` withholds one regardless of date.
+
+Everything reads through `getPublishedPosts()` in `src/lib/content.ts`. Nothing else may call `getCollection('blog')` — that function is the only thing standing between a scheduled post and the public site.
+
+Three taxonomy axes, documented in [`docs/POST_TAXONOMY.md`](docs/POST_TAXONOMY.md):
+
+- **project** — a link. Supplies the technology row for free, so no post ever names a language.
+- **category** — the *form* of the piece. Exactly one, from a closed list of eight.
+- **tags** — the *subject*. Shared with project summaries, which is what makes `/tags/<tag>` list both.
+
+An unrecognised category warns during the build and publishes anyway; `npm run validate:content` is what fails, in its own CI workflow separate from the release cron. A content typo can't delay a scheduled post, and a failed deploy is never mistaken for a content error.
+
+RSS lives at `/rss.xml`, with autodiscovery in every page head.
+
 ### Sanitization layer
 
 `src/lib/github.ts` is the single boundary between raw GitHub API responses and rendered output. It enforces a deny-by-default rule: counts and dates always pass through, but commit messages, repo names, SHAs, and branches only pass through for repos explicitly opted in via the `allowlistContent` flag in `src/config/projects.ts`.
@@ -58,22 +74,33 @@ This matters because the authenticated PAT used at build time can see private re
 ├── astro.config.mjs              # Astro + MDX + Tailwind v4
 ├── render.yaml                   # Render static site config
 ├── .github/workflows/
-│   └── scheduled-rebuild.yml     # Cron + workflow_dispatch trigger
+│   ├── scheduled-rebuild.yml     # Cron deploy trigger — never gated on checks
+│   └── validate-content.yml      # Frontmatter + typecheck, off the release path
+├── scripts/
+│   └── validate-content.ts       # npm run validate:content
 ├── docs/
+│   ├── DESIGN_DOC.md             # Design system — maintained
+│   ├── POST_TAXONOMY.md          # Category/tag rules — maintained
 │   ├── MAINTENANCE.md            # Operational guide
-│   └── TODO.md                   # Active work and milestones
+│   ├── M3_Design.md              # Historical handoff, deliberately stale
+│   └── TODO.md                   # Roadmap
 └── src/
-    ├── config/projects.ts        # Single source of truth for projects
-    ├── content.config.ts         # Astro content collection schema
+    ├── config/
+    │   ├── projects.ts           # Single source of truth for projects
+    │   └── taxonomy.ts           # Closed category list
+    ├── content.config.ts         # Collection schemas: projects, blog, now
     ├── content/
     │   ├── now.md                # Currently-building text
-    │   └── projects/             # MDX case studies
-    ├── lib/github.ts             # GitHub fetch + sanitization layer
-    ├── components/
-    │   ├── ProjectCard.astro     # Visibility-aware project card
-    │   └── PushChart.astro       # 90-day activity bar chart
+    │   ├── projects/             # MDX project summaries
+    │   └── blog/                 # MDX posts
+    ├── lib/
+    │   ├── github.ts             # GitHub fetch + sanitization layer
+    │   ├── content.ts            # Release gating, taxonomy queries
+    │   ├── stack.ts              # Which technologies to show, per surface
+    │   └── dates.ts              # Freshness stamps, relative dates
+    ├── components/               # ProjectCard, PostCard, PageHeader, …
     ├── layouts/BaseLayout.astro
-    ├── pages/                    # Routes
+    ├── pages/                    # Routes, incl. /blog, /tags, rss.xml.ts
     └── styles/global.css         # Tailwind + design tokens
 ```
 
@@ -90,9 +117,13 @@ Open `http://localhost:4321`.
 ## Build
 
 ```bash
-npm run build       # outputs to ./dist
-npm run preview     # serve the build locally
+npm run build              # outputs to ./dist
+npm run preview            # serve the build locally
+npm run validate:content   # blog frontmatter checks (needs Node >= 22)
+npm run typecheck          # astro check
 ```
+
+`npm run dev` and `npm run preview` both bind port 7575 on all interfaces (`server` in `astro.config.mjs`), so other machines on the network can reach them.
 
 ## License
 

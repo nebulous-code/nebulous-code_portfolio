@@ -63,13 +63,39 @@
  *                     Defaults to 'demo'. See PROJECT_LINK_LABELS to add a
  *                     new kind (a desktop download, say).
  *
- * - `tags`            Free-form tag list for the /projects index filter.
+ * Note: there is deliberately no `tags` field here. Tags live in the summary's
+ * MDX frontmatter, which is the canonical source — they span posts and
+ * summaries alike and drive /tags/. A second list here would drift.
  */
 
 /** GitHub account that owns the tracked repos. Used by the data pipeline. */
 export const GITHUB_USERNAME = 'nebulous-code';
 
 export type ProjectVisibility = 'public' | 'private-saas' | 'private-wip';
+
+/**
+ * Technologies the GitHub languages endpoint can't see, because they're used
+ * rather than written. Postgres in these repos is a dependency, not a corpus —
+ * the card dashboard reports no SQL at all, just 0.06% Mako from Alembic
+ * templates, so no byte-share floor would ever surface it.
+ *
+ * A union rather than `string[]` on purpose: a typo becomes a TypeScript error
+ * caught by your editor and by `astro check` in the content workflow, but NOT
+ * by `astro build`, which strips types without checking them. That puts it on
+ * the right side of the warn-vs-fail split — it fails CI, never a release.
+ *
+ * Add a member here to use it. Keep the list to things genuinely invisible to
+ * Linguist; anything with real code in the repo will show up on its own.
+ */
+export type StackTech =
+  | 'postgres'
+  | 'sqlite'
+  | 'redis'
+  | 'docker'
+  | 'fastapi'
+  | 'tauri'
+  | 'tailwind'
+  | 'cargo';
 
 /**
  * What kind of thing `liveUrl` points at, which decides how the link reads.
@@ -95,7 +121,8 @@ export interface ProjectConfig {
   allowlistContent: boolean;
   liveUrl?: string;
   linkKind?: ProjectLinkKind;
-  tags: string[];
+  /** Asserted, unlike `languages` which is measured. See StackTech. */
+  stack?: readonly StackTech[];
 }
 
 export const PROJECTS: ProjectConfig[] = [
@@ -110,7 +137,7 @@ export const PROJECTS: ProjectConfig[] = [
     allowlistContent: true,
     liveUrl: 'https://cards.nebulouscode.com',
     linkKind: 'product',
-    tags: ['vue', 'fastapi', 'postgres', 'data-viz'],
+    stack: ['postgres', 'fastapi'],
   },
   {
     slug: 'cube-practice',
@@ -124,7 +151,7 @@ export const PROJECTS: ProjectConfig[] = [
     // Open source, but a real product someone can use.
     liveUrl: 'https://quiet-cube.com/',
     linkKind: 'product',
-    tags: ['vue', 'spaced-repetition'],
+    stack: ['postgres'],
   },
   {
     slug: 'chip8-emulator',
@@ -138,7 +165,7 @@ export const PROJECTS: ProjectConfig[] = [
     // A toy you play with rather than a product, so it keeps the 'demo'
     // default. Served from the chip8-vue repo, not the tracked chip-8 one.
     liveUrl: 'https://nebulous-code.github.io/chip8-vue/',
-    tags: ['rust', 'emulator', 'tauri'],
+    stack: ['cargo', 'tauri'],
   },
 ];
 
