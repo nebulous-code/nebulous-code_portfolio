@@ -1,9 +1,9 @@
 ---
 # Edit this file when your focus shifts. The home page reads it directly.
 # Keep it short — one or two sentences per active thread.
-updatedAt: 2026-05-04
+updatedAt: 2026-08-11
 ---
 
-Currently building out the **Pokémon Card Market Intelligence Dashboard** — recently shipped the Magikarp-themed dark UI and box-and-whisker price charts. Next up: enhanced historical price snapshot ingestion.
+Lately the main focus has been cleaning up and shipping all my half started projects. Pokemon Card Market Intelligence Dashboard has been shipped fully. Hoping to get this site finished up this month.
 
-Also in active rotation: drilling OLL algorithms in **Cube Practice**, and sketching out a Game Boy emulator as the next deep-dive project.
+When I'm not getting half built things over the finish line I am cleaning up bugs and implementing enhancements in my personal planning application `tdx_`. 
