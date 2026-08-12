@@ -1,12 +1,64 @@
 ---
 slug: pokemon-dashboard
 title: Pokémon Card Market Intelligence Dashboard
-summary: A full-stack dashboard for tracking Pokémon TCG card prices over time, built as a portfolio piece to showcase Vue, FastAPI, and PostgreSQL skills.
+summary: A full-stack dashboard for tracking Pokémon TCG card prices over time, built to manage my personal collection.
 publishedAt: 2026-05-04
 tags:
   - pokemon
   - dashboard
+  - data_pipeline
 hasArchitectureSection: false
 ---
 
-A web app that lets users view current Pokemon card prices and analyze their personal collection indepth with a complementary excel dashboard download.
+A website that shows historic price data for Pokemon cards and can generate custom dashboards based on your uploaded collection. Creates a downloadable Excel dashboard for more in-depth analysis.
+
+**Status:** Shipped
+
+**Released:** August 2026
+
+## Why I Built It
+
+I collected Pokemon cards as a kid and while I grew up I never got rid of my collection. Over the past few years I've been slowly filling out the collection and purchasing cards that were missing.
+
+There are a few digital collection applications out there and I use them but I found their price data lacking. I also found that there were some analytics that I wanted to track like what it would cost to upgrade a collection from one condition to another.
+
+I certainly don't view Pokemon cards as an investment but it is interesting to see how cards have appreciated over time. I also like seeing the price over time because it helps me decide if a card is a deal or not. Does that stop me from buying it? Usually not...but sometimes a deal is a good excuse to get something I didn't think I needed.
+
+## What It Does
+
+- Shows price data per card over time
+- Shows price distribution per card rarity for each set in a box-and-whisker plot
+- Generates web dashboard off of uploaded custom collection (demo collection provided for convenience)
+- Generates a downloadable Excel dashboard with raw data and a dashboard built on Power Query
+
+## Who It's For
+
+This is for anyone with an analytical mind that enjoys collecting Pokemon cards. It's not for investors or scalpers or people trying to make a quick buck. I wanted a tool that would help me manage my collection in an analytical way and wanted to share that ability with others who have the same fascination as me.
+
+## How It Works
+
+The data is sourced from the Pokemon Price Tracker API and TCGDex API. These feed a Postgres database that is updated nightly via a data pipeline run via GitHub Actions.
+
+I'm using Chart.js to render the visuals, charts, graphs, etc. Power Query, pivot tables, and connected slicers are used under the hood of the Excel file to generate the downloadable workbook.
+
+I designed a condition multiplier system to fill in condition gaps for the predictive upgrade pricing feature. Condition multipliers were derived per set and rarity from the past six months of raw-card history. I averaged the observed ratios between condition pairs. These multipliers power the Market Trends heatmap page and the Excel workbook upgrade cost.
+
+A real-world example of these condition multipliers: common cards in the 151 set trade at 0.585× Near Mint when Moderately Played, across 442 card-month observations — so a $10 Near Mint common with no MP data of its own is estimated to be $5.85.
+
+- **Built with:** Python, Vue, Postgres
+- **Runs on:** Render and Neon
+- **Talks to:** Pokemon Price Tracker and TCGDex
+- **Leverages:** FastAPI, SQLAlchemy, Chart.js, Vuetify, Alembic, Power Query, and Excel
+
+## What It Taught Me
+
+The part I'm most proud of in this project is that you can upload a collection without creating an account. I knew I wanted to steer away from authentication so creating a way for users to get custom data from the application without creating an account or giving me PII was important.
+
+Because of this I leaned toward allowing the users to generate a workbook file with their collection info in it and then uploading that. This workflow suits me and hopefully suits others. I was tracking my collection in Excel already so having a standardized way to format that collection data was useful.
+
+I'm already fairly familiar with Excel and Power Query; however, the new challenge that came with this project is how do I get someone with no experience to be able to use the downloaded dashboard. When I create a dashboard for myself I know all the refresh buttons that need to be clicked. This project required me to think about the worksheet from the perspective of someone who may not know Excel as well as me. Because of that I had to dig into and learn settings about how to get an Excel workbook like this to refresh automatically.
+
+I haven't collected Pokemon cards in a while and the grading, rarity, and variants were mostly new to me. Figuring out how to manage this for each set was a challenge, especially for sets I was less familiar with. I found some edge cases like secret rares that I had to navigate around and cards that only existed in variant forms. I don't think I got it all done perfectly and someone more obsessed with the hobby than me could probably give me some guidance but I'm happy with all the edge cases I solved for, and I'm certainly open to any feedback on cases I didn't manage in more modern sets.
+
+Lastly, I learned about how to manage nightly data ingestion via an API including backfilling historic data. Since my API usage is limited and there are a lot of cards I needed to make sure I could cycle through the cards and sets without hitting my API limits so that I could get historic data. I got some of this working for the sets that were important to me but there are a lot of sets I don't collect and just left off of the nightly run to save cost on API credits. If this tool is used by others and is missing sets you want, contact me and I'll get them added.
+

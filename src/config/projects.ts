@@ -97,7 +97,9 @@ export type StackTech =
   | 'cargo'
   | 'vue'
   | 'wasm'
-  | 'eframe';
+  | 'eframe'
+  | 'excel'
+  | 'github_actions';
 
 /**
  * What kind of thing `liveUrl` points at, which decides how the link reads.
@@ -139,7 +141,7 @@ export const PROJECTS: ProjectConfig[] = [
     allowlistContent: true,
     liveUrl: 'https://cards.nebulouscode.com',
     linkKind: 'product',
-    stack: ['postgres', 'fastapi'],
+    stack: ['excel', 'postgres', 'fastapi', 'github_actions'],
   },
   {
     slug: 'cube-practice',
