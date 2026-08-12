@@ -15,6 +15,14 @@ const projects = defineCollection({
   schema: z.object({
     slug: z.string(),
     title: z.string(),
+    // Short line for project cards. Lives here rather than in
+    // src/config/projects.ts so every string a human writes about a project
+    // is in one file — the two used to drift.
+    //
+    // Optional on purpose: a card falls back to `summary` without one. A tall
+    // card is better than a failed deploy, so a missing tagline can't block a
+    // release. `npm run validate:content` still flags it, off the release path.
+    tagline: z.string().optional(),
     summary: z.string(),
     publishedAt: z.coerce.date(),
     updatedAt: z.coerce.date().optional(),

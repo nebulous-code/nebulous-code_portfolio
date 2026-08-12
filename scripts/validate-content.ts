@@ -22,6 +22,8 @@ import { BLOG_CATEGORIES, isWellFormedTag } from '../src/config/taxonomy.ts';
 import { PROJECTS } from '../src/config/projects.ts';
 
 const BLOG_DIR = 'src/content/blog';
+const PROJECT_DIR = 'src/content/projects';
+const PROJECT_REQUIRED = ['slug', 'title', 'summary', 'publishedAt'] as const;
 const REQUIRED = ['title', 'summary', 'publishedAt', 'category'] as const;
 
 const problems: string[] = [];
@@ -110,6 +112,64 @@ for (const file of files.sort()) {
   }
 }
 
+/*
+ * Project summaries.
+ *
+ * Every PROJECTS entry must have one, because that MDX now owns the title and
+ * tagline the cards render — and because /projects/[slug] builds its routes
+ * from these files, so a config entry without one produces a card linking to a
+ * 404. Checked in both directions: an orphan summary has no links, stack, or
+ * live URL, since those come from the config side.
+ */
+let projectFiles: string[] = [];
+try {
+  projectFiles = readdirSync(PROJECT_DIR).filter((f) => f.endsWith('.mdx'));
+} catch {
+  projectFiles = [];
+}
+
+const summarySlugs = new Map<string, string>();
+
+for (const file of projectFiles.sort()) {
+  const data = frontmatterOf(readFileSync(join(PROJECT_DIR, file), 'utf8'), file);
+  if (!data) continue;
+
+  for (const field of PROJECT_REQUIRED) {
+    if (data[field] === undefined || data[field] === '') {
+      fail(file, `missing required field "${field}"`);
+    }
+  }
+
+  // Not required by the schema — a card falls back to `summary` — but worth
+  // nagging about here, where failing costs a red check and not a deploy.
+  if (data['tagline'] === undefined || data['tagline'] === '') {
+    fail(file, 'no "tagline" — the card will fall back to the longer summary');
+  }
+
+  const tags = data['tags'];
+  if (Array.isArray(tags)) {
+    for (const tag of tags) {
+      if (!isWellFormedTag(String(tag))) {
+        fail(file, `tag "${tag}" is not singular snake_case (lowercase, underscores)`);
+      }
+    }
+  }
+
+  const slug = String(data['slug'] ?? '');
+  if (slug) summarySlugs.set(slug, file);
+  if (slug && !projectSlugs.has(slug)) {
+    fail(file, `slug "${slug}" has no entry in src/config/projects.ts, so the page has no links or stack`);
+  }
+}
+
+for (const slug of projectSlugs) {
+  if (!summarySlugs.has(slug)) {
+    problems.push(
+      `src/config/projects.ts: project "${slug}" has no summary at ${PROJECT_DIR}/${slug}.mdx — its card would have no title and would link to a 404`,
+    );
+  }
+}
+
 if (problems.length > 0) {
   console.error(`\nContent validation failed — ${problems.length} problem(s):\n`);
   for (const problem of problems) console.error(`  ${problem}`);
@@ -117,4 +177,6 @@ if (problems.length > 0) {
   process.exit(1);
 }
 
-console.log(`Content validation passed — ${files.length} post(s) checked.`);
+console.log(
+  `Content validation passed — ${files.length} post(s), ${projectFiles.length} project summary(s) checked.`,
+);

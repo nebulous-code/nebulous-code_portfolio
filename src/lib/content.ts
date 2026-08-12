@@ -104,6 +104,31 @@ export async function getInheritedTech(
   };
 }
 
+/**
+ * The human-written strings for a project: its title and its card tagline.
+ *
+ * These live in the summary's MDX frontmatter, not in src/config/projects.ts.
+ * They used to exist in both places as `title`/`name` and `summary`/`tagline`,
+ * and both pairs drifted — a rename left the card saying "Rubik's Cube
+ * Practice" while the page it linked to said "Quiet-Cube". Config now holds
+ * only pipeline facts; every string a human writes is in one file.
+ *
+ * `tagline` falls back to `summary` when unwritten. The card just gets taller,
+ * which beats failing a build over a missing string — content problems never
+ * stop a deploy. validate:content still flags it.
+ *
+ * Undefined when no summary MDX matches the slug, which validate:content
+ * fails on.
+ */
+export async function getProjectDisplay(
+  slug: string,
+): Promise<{ title: string; tagline: string } | undefined> {
+  const entries = await getCollection('projects');
+  const entry = entries.find((e) => e.data.slug === slug);
+  if (!entry) return undefined;
+  return { title: entry.data.title, tagline: entry.data.tagline ?? entry.data.summary };
+}
+
 /** Published posts about a given project, newest first. */
 export async function getPostsForProject(
   slug: string,

@@ -14,7 +14,7 @@ import PageHeader from '~/components/PageHeader.astro';
 import Prose from '~/components/Prose.astro';
 import { render } from 'astro:content';
 import { getProjectBySlug } from '~/config/projects';
-import { getInheritedTech, getPublishedPosts, slugify } from '~/lib/content';
+import { getInheritedTech, getProjectDisplay, getPublishedPosts, slugify } from '~/lib/content';
 import { allTech } from '~/lib/stack';
 
 export async function getStaticPaths() {
@@ -30,6 +30,8 @@ const { Content } = await render(post);
 const { title, summary, publishedAt, updatedAt, category, tags, project } = post.data;
 
 const relatedProject = project ? getProjectBySlug(project) : undefined;
+const relatedDisplay = relatedProject ? await getProjectDisplay(relatedProject.slug) : undefined;
+const relatedTitle = relatedDisplay?.title ?? relatedProject?.slug ?? '';
 // Inherited from the project, never stored on the post. A post page has room,
 // so it shows everything rather than the featured three.
 const tech = await getInheritedTech(post);
@@ -45,7 +47,7 @@ const languages = allTech(tech.languages, tech.stack);
             {relatedProject ? (
               <span class="seg">
                 <a class="project-link" href={`/projects/${relatedProject.slug}`}>
-                  {relatedProject.name}
+                  {relatedTitle}
                 </a>
               </span>
             ) : null}
@@ -81,7 +83,7 @@ const languages = allTech(tech.languages, tech.stack);
         <ActionLink href="/blog" tone="muted" direction="back">all posts</ActionLink>
         {relatedProject ? (
           <ActionLink href={`/projects/${relatedProject.slug}`}>
-            part of {relatedProject.name}
+            part of {relatedTitle}
           </ActionLink>
         ) : null}
       </footer>

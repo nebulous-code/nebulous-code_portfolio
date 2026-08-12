@@ -21,6 +21,7 @@ import ProjectStatsGrid from './ProjectStatsGrid.astro';
 import Sparkline from './Sparkline.astro';
 import { getLiveLink } from '~/config/projects';
 import { pickFeaturedTech } from '~/lib/stack';
+import { getProjectDisplay } from '~/lib/content';
 import { daysSince } from '~/lib/dates';
 import type { ProjectConfig } from '~/config/projects';
 import type { ProjectActivity, ProjectStats } from '~/lib/github';
@@ -53,6 +54,13 @@ const liveLink = getLiveLink(project);
 // stack entry when both exist. The summary page shows the full list.
 const featuredTech = pickFeaturedTech(stats?.languages ?? [], project.stack ?? []);
 
+// Title and tagline come from the summary's MDX frontmatter — the one place
+// project prose is written. Falls back to the slug so a missing summary shows
+// as obviously wrong rather than blank; validate:content fails on it.
+const display = await getProjectDisplay(project.slug);
+const title = display?.title ?? project.slug;
+const tagline = display?.tagline ?? '';
+
 // Auto-derive active/idle status from last-commit recency. The grid does its
 // own labelling from the same helper, so the two can't disagree.
 const isActive = daysSince(activity?.lastCommitDate) <= 30;
@@ -68,13 +76,13 @@ const eyebrowText = `project · ${statusLabel}`;
     <div class="title-block">
       <Eyebrow>{eyebrowText}</Eyebrow>
       <h3 class="title">
-        <a href={`/projects/${project.slug}`}>{project.name}</a>
+        <a href={`/projects/${project.slug}`}>{title}</a>
       </h3>
     </div>
     <Badge tone={statusTone}>{statusLabel}</Badge>
   </header>
 
-  <p class="description">{project.tagline}</p>
+  {tagline ? <p class="description">{tagline}</p> : null}
 
   {featuredTech.length > 0 ? (
     <p class="languages">{featuredTech.join(' · ')}</p>

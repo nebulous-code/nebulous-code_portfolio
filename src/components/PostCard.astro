@@ -19,7 +19,7 @@ import ActionLink from './ActionLink.astro';
 import Badge from './Badge.astro';
 import Eyebrow from './Eyebrow.astro';
 import { getProjectBySlug } from '~/config/projects';
-import { getInheritedTech, slugify } from '~/lib/content';
+import { getInheritedTech, getProjectDisplay, slugify } from '~/lib/content';
 import { pickFeaturedTech } from '~/lib/stack';
 import { updatedLabel } from '~/lib/dates';
 
@@ -33,6 +33,7 @@ const { title, summary, publishedAt, updatedAt, category, tags, project } = post
 // Tech is inherited from the linked project, never stored on the post. The
 // card is compact, so it shows the featured three; the post page shows all.
 const linkedProject = project ? getProjectBySlug(project) : undefined;
+const linkedDisplay = linkedProject ? await getProjectDisplay(linkedProject.slug) : undefined;
 const tech = await getInheritedTech(post);
 const featured = pickFeaturedTech(tech.languages, tech.stack);
 
@@ -59,7 +60,7 @@ const dateLabel = publishedAt.toLocaleDateString('en-US', {
       {linkedProject ? (
         <span class="seg">
           <a class="project-link" href={`/projects/${linkedProject.slug}`}>
-            {linkedProject.name}
+            {linkedDisplay?.title ?? linkedProject.slug}
           </a>
         </span>
       ) : null}

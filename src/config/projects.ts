@@ -10,12 +10,10 @@
  * - `slug`            URL slug used for the case study route (/projects/[slug]).
  *                     Must match a corresponding MDX file in src/content/projects/.
  *
- * - `name`            Display name shown in cards and case studies. This is
- *                     ALWAYS what visitors see — the GitHub repo name is never
- *                     rendered directly, so renaming a repo doesn't affect
- *                     the site.
- *
- * - `tagline`         One-sentence pitch for cards.
+ * Note: `title` and `tagline` are NOT here. Every string a human writes about
+ * a project lives in its summary's MDX frontmatter, so there's one file to
+ * edit and nothing to keep in sync. This file holds pipeline facts only —
+ * which repo, how to treat it, where to link. See docs/POST_TAXONOMY.md.
  *
  * - `repo`            GitHub repo in `owner/name` format. Used by the data
  *                     pipeline to fetch commit data. May point to a private
@@ -116,8 +114,6 @@ const PROJECT_LINK_LABELS: Record<ProjectLinkKind, string> = {
 
 export interface ProjectConfig {
   slug: string;
-  name: string;
-  tagline: string;
   repo: string;
   visibility: ProjectVisibility;
   tracked: boolean;
@@ -132,8 +128,6 @@ export interface ProjectConfig {
 export const PROJECTS: ProjectConfig[] = [
   {
     slug: 'pokemon-dashboard',
-    name: 'Pokémon Card Market Intelligence Dashboard',
-    tagline: 'Full-stack dashboard tracking Pokémon TCG card prices over time.',
     repo: 'nebulous-code/card_market_intelligence_dashboard',
     visibility: 'public',
     tracked: true,
@@ -145,8 +139,6 @@ export const PROJECTS: ProjectConfig[] = [
   },
   {
     slug: 'cube-practice',
-    name: 'Quiet-Cube',
-    tagline: 'Web app for drilling OLL algorithms with spaced repetition.',
     repo: 'nebulous-code/quiet-cube',
     visibility: 'public',
     tracked: true,
@@ -159,8 +151,6 @@ export const PROJECTS: ProjectConfig[] = [
   },
   {
     slug: 'chip8-emulator',
-    name: 'Chip-8 Emulator',
-    tagline: 'Chip-8 emulator written in Rust with a Vue desktop wrapper.',
     repo: 'nebulous-code/chip-8',
     visibility: 'public',
     tracked: true,
