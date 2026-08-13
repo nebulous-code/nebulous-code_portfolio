@@ -140,6 +140,20 @@ const { class: className = '' } = Astro.props;
   }
 
   /* Lists */
+  /*
+   * Tailwind's preflight sets `ol, ul, menu { list-style: none }`, so markers
+   * have to be put back explicitly. Without this the ::marker rules below
+   * style something that isn't rendered, and prose lists lose their bullets
+   * silently — the markup is correct, the CSS just erased it.
+   */
+  .prose ul {
+    list-style: disc;
+  }
+
+  .prose ol {
+    list-style: decimal;
+  }
+
   .prose ul,
   .prose ol {
     margin-block: var(--space-6);

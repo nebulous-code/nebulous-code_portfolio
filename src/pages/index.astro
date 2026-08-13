@@ -7,8 +7,8 @@ import ProjectCard from '~/components/ProjectCard.astro';
 import Prose from '~/components/Prose.astro';
 import PushChart from '~/components/PushChart.astro';
 import { getEntry, render } from 'astro:content';
-import { GITHUB_USERNAME, getFeaturedProjects } from '~/config/projects';
-import { getLatestProjectUpdate } from '~/lib/content';
+import { GITHUB_USERNAME } from '~/config/projects';
+import { getFeaturedProjects, getLatestProjectUpdate } from '~/lib/content';
 import { updatedLabel } from '~/lib/dates';
 import { getCommitActivity, getProjectActivity, getProjectStats } from '~/lib/github';
 
@@ -30,20 +30,21 @@ const NowContent = nowEntry ? (await render(nowEntry)).Content : null;
 // than letting a fresh deploy imply the text is fresh too.
 const nowUpdated = nowEntry ? updatedLabel(nowEntry.data.updatedAt) : null;
 
-const featured = getFeaturedProjects();
+const featured = await getFeaturedProjects();
 const activityByRepo = new Map(projectActivity.map((p) => [p.repo, p]));
 const statsByRepo = new Map(projectStats.map((s) => [s.repo, s]));
 ---
 
-<BaseLayout title="nebulous-code">
+<BaseLayout
+  title="nebulous-code"
+  description="Nicholas Licalsi — full-stack developer. Projects, writing, and live GitHub activity."
+>
   <div class="container-wide">
     <section class="hero">
       <Logo size={72} ariaLabel="nebulous-code" class="hero-logo" />
       <h1 class="display">Nicholas Licalsi </h1>
       <p class="lede">
-        Full-stack developer with a decade of experience and a soft spot for
-        reporting, data pipelines, and the tools that make other developers
-        faster.
+        All my projects teach me something, which means none of them waste my time. Some were built over months, some in an afternoon, some are still in progress. Live stats from GitHub show what I'm working on today.
       </p>
       <div class="hero-actions">
         <ActionLink href="/projects" size="large">see projects</ActionLink>
@@ -85,6 +86,12 @@ const statsByRepo = new Map(projectStats.map((s) => [s.repo, s]));
             stats={statsByRepo.get(project.repo)}
           />
         ))}
+      </div>
+
+      {/* The grid is a subset once anything is unfeatured, with nothing on the
+          page saying so. This is the way out. */}
+      <div class="section-cta">
+        <ActionLink href="/projects">see more projects</ActionLink>
       </div>
     </section>
   </div>
@@ -152,6 +159,10 @@ const statsByRepo = new Map(projectStats.map((s) => [s.repo, s]));
     letter-spacing: -0.01em;
     margin: 0;
     color: var(--color-ink);
+  }
+
+  .section-cta {
+    margin-top: var(--space-8);
   }
 
   /* ───── Project grid ───── */

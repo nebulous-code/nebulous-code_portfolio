@@ -5,7 +5,8 @@
 import { getCollection } from 'astro:content';
 import type { CollectionEntry } from 'astro:content';
 import { isKnownCategory, BLOG_CATEGORIES } from '~/config/taxonomy';
-import { GITHUB_USERNAME, getProjectBySlug } from '~/config/projects';
+import { GITHUB_USERNAME, PROJECTS, getProjectBySlug } from '~/config/projects';
+import type { ProjectConfig } from '~/config/projects';
 import { getProjectStats } from '~/lib/github';
 
 /**
@@ -127,6 +128,45 @@ export async function getProjectDisplay(
   const entry = entries.find((e) => e.data.slug === slug);
   if (!entry) return undefined;
   return { title: entry.data.title, tagline: entry.data.tagline ?? entry.data.summary };
+}
+
+/**
+ * Projects in display order, partitioned so featured ones come first.
+ *
+ * Base order is the PROJECTS array itself — that's manual curation, and it's
+ * what the site already used. `featured` only partitions within it, so
+ * demoting a project moves it down the page rather than reshuffling anything.
+ *
+ * `featured` lives in the summary's MDX beside the tags and dates, not in the
+ * config: it's an editorial decision, and it belongs in the file being edited
+ * when that decision gets made.
+ */
+async function getProjectsPartitioned(): Promise<{
+  featured: ProjectConfig[];
+  rest: ProjectConfig[];
+}> {
+  const entries = await getCollection('projects');
+  const isFeatured = new Map(entries.map((e) => [e.data.slug, e.data.featured]));
+
+  const featured: ProjectConfig[] = [];
+  const rest: ProjectConfig[] = [];
+  for (const project of PROJECTS) {
+    // Unknown slug means no summary, which validate:content already fails on.
+    // Treat it as featured so a misconfiguration is visible, not hidden.
+    (isFeatured.get(project.slug) === false ? rest : featured).push(project);
+  }
+  return { featured, rest };
+}
+
+/** Projects carded on the home page. */
+export async function getFeaturedProjects(): Promise<ProjectConfig[]> {
+  return (await getProjectsPartitioned()).featured;
+}
+
+/** Every project, featured first — the /projects listing. */
+export async function getAllProjects(): Promise<ProjectConfig[]> {
+  const { featured, rest } = await getProjectsPartitioned();
+  return [...featured, ...rest];
 }
 
 /** Published posts about a given project, newest first. */

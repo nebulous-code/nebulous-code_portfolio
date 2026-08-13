@@ -35,6 +35,10 @@ interface Props {
    */
   updated?: Date | undefined;
   title: string;
+  /**
+   * Plain-text lede. For one containing a link, pass a `lede` slot instead —
+   * a string prop can't carry markup, and the slot wins when both are given.
+   */
   lede?: string;
   class?: string;
 }
@@ -48,7 +52,11 @@ const eyebrowText = updated ? updatedLabel(updated) : eyebrow;
 <header class:list={['page-header', className]}>
   {eyebrowText ? <p class="eyebrow">{eyebrowText}</p> : null}
   <h1 class="display">{title}</h1>
-  {lede ? <p class="lede">{lede}</p> : null}
+  {Astro.slots.has('lede') ? (
+    <p class="lede"><slot name="lede" /></p>
+  ) : lede ? (
+    <p class="lede">{lede}</p>
+  ) : null}
   {hasActions ? (
     <div class="actions">
       <slot />
@@ -96,6 +104,17 @@ const eyebrowText = updated ? updatedLabel(updated) : eyebrow;
   /* Nothing below it, so nothing to space away from. */
   .lede:last-child {
     margin-bottom: 0;
+  }
+
+  /* Inline link inside voice copy — no arrow, per DESIGN_DOC §5. Arrows mark
+     calls to action; this is a sentence that happens to link somewhere. */
+  .lede a {
+    color: var(--color-blue);
+    text-decoration: none;
+  }
+
+  .lede a:hover {
+    text-decoration: underline;
   }
 
   .actions {

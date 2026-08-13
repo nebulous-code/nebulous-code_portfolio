@@ -39,10 +39,6 @@
  *                     work outside these projects still counts toward the
  *                     total. See getCommitActivity in src/lib/github.ts.
  *
- * - `featured`        If true, this project appears as a card on the home page
- *                     and in the /projects index. If false, it's tracked for
- *                     the sparkline but not surfaced as a featured project.
- *
  * - `allowlistContent` Explicit opt-in to showing commit *messages* (and other
  *                     content like SHAs and branch names) for this repo.
  *                     Default is false — even public repos are scrubbed unless
@@ -117,7 +113,6 @@ export interface ProjectConfig {
   repo: string;
   visibility: ProjectVisibility;
   tracked: boolean;
-  featured: boolean;
   allowlistContent: boolean;
   liveUrl?: string;
   linkKind?: ProjectLinkKind;
@@ -131,7 +126,6 @@ export const PROJECTS: ProjectConfig[] = [
     repo: 'nebulous-code/card_market_intelligence_dashboard',
     visibility: 'public',
     tracked: true,
-    featured: true,
     allowlistContent: true,
     liveUrl: 'https://cards.nebulouscode.com',
     linkKind: 'product',
@@ -142,7 +136,6 @@ export const PROJECTS: ProjectConfig[] = [
     repo: 'nebulous-code/quiet-cube',
     visibility: 'public',
     tracked: true,
-    featured: true,
     allowlistContent: true,
     // Open source, but a real product someone can use.
     liveUrl: 'https://quiet-cube.com/',
@@ -154,7 +147,6 @@ export const PROJECTS: ProjectConfig[] = [
     repo: 'nebulous-code/chip-8',
     visibility: 'public',
     tracked: true,
-    featured: true,
     allowlistContent: true,
     // A toy you play with rather than a product, so it keeps the 'demo'
     // default. Served from the chip8-vue repo, not the tracked chip-8 one.
@@ -166,10 +158,6 @@ export const PROJECTS: ProjectConfig[] = [
 /**
  * Helpers used by the data pipeline and templates.
  */
-
-export function getFeaturedProjects(): ProjectConfig[] {
-  return PROJECTS.filter((p) => p.featured);
-}
 
 export function getTrackedRepos(): string[] {
   return PROJECTS.filter((p) => p.tracked).map((p) => p.repo);

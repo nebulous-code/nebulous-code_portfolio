@@ -20,7 +20,7 @@ const posts = await getPostsByCategory(category!);
 
 <BaseLayout
   title={`${value} — nebulous-code`}
-  description={`Posts in the ${value} category.`}
+  description={`${posts.length} post${posts.length === 1 ? '' : 's'} in the ${value} category, by Nicholas Licalsi.`}
 >
   <div class="container-wide">
     <PageHeader

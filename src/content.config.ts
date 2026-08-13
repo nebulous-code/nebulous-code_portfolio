@@ -27,6 +27,10 @@ const projects = defineCollection({
     publishedAt: z.coerce.date(),
     updatedAt: z.coerce.date().optional(),
     tags: z.array(z.string()).default([]),
+    // Whether this project gets a card on the home page. Every project shows
+    // on /projects regardless. Defaults true so adding one surfaces it — you
+    // demote deliberately, you don't promote by remembering to.
+    featured: z.boolean().default(true),
     // Optional architecture section flag — used by the case study layout to
     // emphasize the architecture writeup for projects without viewable source.
     hasArchitectureSection: z.boolean().default(false),

@@ -271,7 +271,8 @@ Selection lives in `src/lib/stack.ts`, not in the data layer. How many to show i
 
 | Surface | Renders |
 |---|---|
-| `/`, `/projects` | `ProjectCard` |
+| `/` | `ProjectCard` — featured projects only, plus a `see more projects →` link |
+| `/projects` | `ProjectCard` — everything, featured first |
 | `/blog`, `/blog/category/…` | `PostCard` |
 | `/tags/…` | both — projects pinned above posts |
 | project summary, "Writing" section | `PostCard` |

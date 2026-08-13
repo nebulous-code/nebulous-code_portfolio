@@ -35,7 +35,26 @@
 import { getContentAllowlist, getTrackedRepos } from '~/config/projects';
 
 const GITHUB_API = 'https://api.github.com';
+
 const TOKEN = import.meta.env['GITHUB_TOKEN'] ?? process.env['GITHUB_TOKEN']
+
+/**
+ * Timezone the activity charts are bucketed in.
+ *
+ * GitHub returns commit timestamps in UTC. Slicing the ISO string was the
+ * obvious thing to do and it was wrong: a commit at 8pm Central is already
+ * tomorrow in UTC, so an evening session showed up as the next day's work and
+ * a Sunday-night push landed in the following week's bar.
+ *
+ * `en-CA` formats as YYYY-MM-DD, and passing a timeZone handles the CDT/CST
+ * switch without a DST table.
+ */
+const SITE_TIMEZONE = 'America/Chicago';
+
+/** The local calendar day an instant falls on, as YYYY-MM-DD. */
+function localDay(instant: Date | string | number): string {
+  return new Date(instant).toLocaleDateString('en-CA', { timeZone: SITE_TIMEZONE });
+}
 
 interface GitHubCommit {
   sha: string;
@@ -280,7 +299,7 @@ export async function getCommitActivity(
               for (const commit of commits) {
                 if (seenShas.has(commit.sha)) continue;
                 seenShas.add(commit.sha);
-                const day = commit.commit.author.date.slice(0, 10);
+                const day = localDay(commit.commit.author.date);
                 buckets.set(day, (buckets.get(day) ?? 0) + 1);
               }
 
@@ -296,8 +315,7 @@ export async function getCommitActivity(
 
   const points: ActivityPoint[] = [];
   for (let i = days - 1; i >= 0; i--) {
-    const d = new Date(Date.now() - i * 24 * 60 * 60 * 1000);
-    const key = d.toISOString().slice(0, 10);
+    const key = localDay(Date.now() - i * 24 * 60 * 60 * 1000);
     points.push({ date: key, count: buckets.get(key) ?? 0 });
   }
 
@@ -386,11 +404,9 @@ const LANGUAGE_FLOOR = 0.12;
 const ACTIVITY_WEEKS = 13;
 const ACTIVITY_DAYS = ACTIVITY_WEEKS * 7;
 
-/** ISO date `offset` days before today, matching the API's date keys. */
+/** Local calendar day `offset` days before today, matching the bucket keys. */
 function dayKey(offset: number): string {
-  return new Date(Date.now() - offset * 24 * 60 * 60 * 1000)
-    .toISOString()
-    .slice(0, 10);
+  return localDay(Date.now() - offset * 24 * 60 * 60 * 1000);
 }
 
 /** Commits within the most recent `days` days of a day-keyed bucket map. */
@@ -480,7 +496,7 @@ async function fetchProjectStats(username: string): Promise<ProjectStats[]> {
             `/repos/${repo}/commits?since=${since}&author=${username}&per_page=100&page=${page}`,
           )) as GitHubCommit[];
           for (const commit of commits) {
-            const day = commit.commit.author.date.slice(0, 10);
+            const day = localDay(commit.commit.author.date);
             daily.set(day, (daily.get(day) ?? 0) + 1);
           }
           if (commits.length < 100) break;

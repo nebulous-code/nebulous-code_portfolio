@@ -34,12 +34,9 @@ The next build will pick up fresh data within ~2 minutes.
    ```ts
    {
      slug: 'my-new-project',
-     name: 'My New Project',
-     tagline: 'One-sentence pitch.',
      repo: 'nebulous-code/my-new-project',
      visibility: 'public',
      tracked: true,
-     featured: true,
      allowlistContent: true,
      liveUrl: 'https://my-new-project.nebulouscode.com', // optional
      linkKind: 'product', // 'demo' (default) or 'product'
@@ -53,10 +50,12 @@ The next build will pick up fresh data within ~2 minutes.
    ---
    slug: my-new-project
    title: My New Project
-   summary: One-sentence summary.
+   tagline: Short line for the cards.
+   summary: One or two sentences. Shown on the summary page and in listings.
    publishedAt: 2026-MM-DD
    tags:
      - subject_tag
+   featured: true            # optional, defaults true — false hides it from the home page
    hasArchitectureSection: false
    ---
 
@@ -86,15 +85,15 @@ Two sources, merged for display:
 | Field | Notes |
 |---|---|
 | `slug` | URL slug. Must match the MDX frontmatter `slug`. |
-| `name` | Display name. The repo can be renamed without affecting the site. |
 | `repo` | `owner/name` format. Used by the data pipeline. |
 | `visibility` | `'public'`, `'private-saas'`, or `'private-wip'`. Drives card affordances. |
 | `tracked` | If true, contributes to the activity sparkline (count + date only). |
-| `featured` | If true, appears on home page and `/projects` index. |
 | `allowlistContent` | Opt-in to showing commit messages, SHAs, branch names. Default-deny. Should always be `false` if `visibility !== 'public'`. |
 | `liveUrl` | Where a visitor can use the thing. Shown on the card and the summary page. Omit if there's nowhere to send them yet. |
 | `linkKind` | How `liveUrl` is labeled: `'demo'` (default) or `'product'`. Independent of `visibility` — an open repo can still be a real product. |
 | `stack` | Technologies the GitHub languages API can't see, because they're used rather than written — Postgres, Docker, a framework. Merged with the measured languages for display. Typed as a union, so a typo is a TypeScript error. |
+
+**`title`, `tagline`, `tags`, and `featured` are not here** — they live in the summary's MDX. Every string a human writes about a project, plus the editorial call of whether to feature it, is in the file you're editing when you make those decisions. `featured: false` drops a project from the **home page only**; `/projects` lists everything, featured first.
 
 ## Adding a blog post
 
@@ -163,6 +162,14 @@ Validation fails if the slug doesn't match a real project, so a rename can't sil
 
 Project summary MDX files carry `tags` as well, and `/tags/<tag>` lists posts and summaries together — that shared axis is what connects the two content types. Categories don't apply to summaries; a summary has no form or tone to describe.
 
+## SEO and social metadata
+
+Handled centrally in `src/layouts/BaseLayout.astro` — canonical URL, Open Graph, and Twitter tags are derived from the `title` and `description` props every page already passes. Nothing to remember per page beyond writing a real `description`.
+
+`@astrojs/sitemap` generates `/sitemap-index.xml` at build; `public/robots.txt` points at it. Both need `site` in `astro.config.mjs`, which is also what makes the social URLs absolute — Open Graph silently ignores relative ones, so a root-relative image would produce a preview with no picture and no warning.
+
+**The link preview image is the logo** (`/png/logo-512.png`), used as a `summary` card. A proper 1200×630 Open Graph image would upgrade it to `summary_large_image`; pass `image` to `BaseLayout` to override per page.
+
 ## Transitioning public → private SaaS
 
 The expected path: a free demo project gains real users, gets paywalled features, and the source goes private. The site is built to handle this without redesign.
@@ -186,13 +193,17 @@ The deny-by-default sanitization in `src/lib/github.ts` means the only way to le
 
 ## Removing a project
 
-To stop showing a project entirely (without deleting history):
+Depends how far you want to go:
 
-- Set `featured: false` to remove it from cards but keep it in the sparkline.
-- Set `tracked: false` to also remove it from the sparkline.
-- Delete the `src/content/projects/<slug>.mdx` file to remove the case study route.
+| Goal | Do this |
+|---|---|
+| Off the home page, still browsable | `featured: false` in the summary's MDX |
+| Keep the page, drop its live stats | `tracked: false` in `src/config/projects.ts` — the KPI cells and per-project chart go blank |
+| Gone from the site | Delete **both** the `PROJECTS` entry and `src/content/projects/<slug>.mdx` |
 
-The most aggressive version (untrack + unfeatured + delete MDX) makes the project invisible to the site entirely on the next build.
+**Delete both or neither.** The two are validated as a matched pair: a config entry with no summary has no title and links to a 404, and a summary with no config entry has no links, stack, or live URL. `npm run validate:content` fails on either half, off the release path as usual.
+
+`tracked: false` does **not** remove the project's commits from the home page activity chart. That chart scans every non-archived, non-fork repo pushed to in the last 90 days, regardless of what's in `PROJECTS` — see `getCommitActivity` in `src/lib/github.ts`.
 
 ## Debugging
 

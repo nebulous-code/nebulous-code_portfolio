@@ -9,13 +9,18 @@ import Prose from '~/components/Prose.astro';
 const LAST_UPDATED = new Date('2025-06-01');
 ---
 
-<BaseLayout title="Resume — nebulous-code">
+<BaseLayout
+  title="Resume — nebulous-code"
+  description="Resume for Nicholas Licalsi, full-stack developer. PDF download."
+>
   <div class="container-narrow">
     <PageHeader
       updated={LAST_UPDATED}
       title="Resume"
-      lede="The short version, structured. The long version is in the projects."
     >
+      <Fragment slot="lede">
+        The resume, because I've got to fit myself on a page. <a href="/projects">The projects</a>, because I've got more to show.
+      </Fragment>
       <ActionLink href="/resume.pdf" size="large">download PDF</ActionLink>
     </PageHeader>
 

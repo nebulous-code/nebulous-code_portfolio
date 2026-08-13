@@ -2,11 +2,11 @@
 import BaseLayout from '~/layouts/BaseLayout.astro';
 import PageHeader from '~/components/PageHeader.astro';
 import ProjectCard from '~/components/ProjectCard.astro';
-import { GITHUB_USERNAME, getFeaturedProjects } from '~/config/projects';
-import { getLatestProjectUpdate } from '~/lib/content';
+import { GITHUB_USERNAME } from '~/config/projects';
+import { getAllProjects, getLatestProjectUpdate } from '~/lib/content';
 import { getProjectActivity, getProjectStats } from '~/lib/github';
 
-const projects = getFeaturedProjects();
+const projects = await getAllProjects();
 const [projectActivity, projectStats, latestUpdate] = await Promise.all([
   getProjectActivity(GITHUB_USERNAME),
   getProjectStats(GITHUB_USERNAME),
@@ -16,12 +16,15 @@ const activityByRepo = new Map(projectActivity.map((p) => [p.repo, p]));
 const statsByRepo = new Map(projectStats.map((s) => [s.repo, s]));
 ---
 
-<BaseLayout title="Projects — nebulous-code">
+<BaseLayout
+  title="Projects — nebulous-code"
+  description="Software projects by Nicholas Licalsi, each with a written summary and live GitHub stats."
+>
   <div class="container-wide">
     <PageHeader
       updated={latestUpdate}
       title="Projects"
-      lede="Things I've built. Each has a longer project summary with the decisions, the dead ends, and what I'd do differently."
+      lede="When I'm not building software, I'm showing it off here. Maybe you'll find a project you like. If so, let me know."
     />
 
     {/* TODO M5: tag filter */}
