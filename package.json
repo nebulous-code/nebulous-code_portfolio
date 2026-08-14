@@ -9,6 +9,7 @@
     "start": "astro dev",
     "build": "astro build",
     "preview": "astro preview",
+    "serve": "astro build && astro preview",
     "astro": "astro",
     "typecheck": "astro check",
     "validate:content": "node --experimental-strip-types scripts/validate-content.ts"

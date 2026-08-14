@@ -123,7 +123,7 @@ npm run validate:content   # blog frontmatter checks (needs Node >= 22)
 npm run typecheck          # astro check
 ```
 
-`npm run dev` and `npm run preview` both bind port 7575 on all interfaces (`server` in `astro.config.mjs`), so other machines on the network can reach them.
+`npm run dev` and `npm run preview` both bind port 7574 on all interfaces (`server` in `astro.config.mjs`), so other machines on the network can reach them.
 
 ## License
 

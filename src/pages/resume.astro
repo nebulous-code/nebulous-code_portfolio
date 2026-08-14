@@ -17,19 +17,32 @@ const LAST_UPDATED = new Date('2025-06-01');
     <PageHeader
       updated={LAST_UPDATED}
       title="Resume"
+      lede="The resume, because I've got to fit myself on a page. The projects, because I've got more to show."
     >
-      <Fragment slot="lede">
-        The resume, because I've got to fit myself on a page. <a href="/projects">The projects</a>, because I've got more to show.
-      </Fragment>
       <ActionLink href="/resume.pdf" size="large">download PDF</ActionLink>
     </PageHeader>
 
     <div class="body">
       <Prose>
-        <p>For now, the projects page tells the story.</p>
+        <p>
+          As a software professional with a decade of experience I've worked as a full-stack SaaS developer building reports, completed custom development for enterprise clients, and built in-house tools for the company that runs them.
+        </p>
+
+        <p>
+          Beyond development I've worked as a product manager at a property management company. There I sat with clients to design reports, ran scrum ceremonies for my team, and presented release risks to executives. Earlier than that I opened a coworking space, which included modeling revenue against rent and projecting membership prices before customers walked through the door.
+        </p>
+
+        <p>
+          The through line of my career has always been analytics and reporting. I design reports that show actionable metrics, optimize the process of report generation, and coalesce data across systems that weren't meant to talk to each other.
+        </p>
+
+        <p>
+          I'm not currently looking to leave where I am, but I am always interested to hear about unusual problems.
+        </p>
       </Prose>
 
       <div class="page-cta">
+        <ActionLink href="/about" tone="muted">about me</ActionLink>
         <ActionLink href="/projects">see projects</ActionLink>
       </div>
     </div>
@@ -45,5 +58,9 @@ const LAST_UPDATED = new Date('2025-06-01');
      sentence — prose links are a different thing and carry no arrow. */
   .page-cta {
     margin-top: var(--space-9);
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: var(--space-5);
   }
 </style>

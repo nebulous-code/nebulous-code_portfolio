@@ -5,7 +5,7 @@ import PageHeader from '~/components/PageHeader.astro';
 import Prose from '~/components/Prose.astro';
 
 // Bump this when the copy below actually changes.
-const LAST_UPDATED = new Date('2026-08-10');
+const LAST_UPDATED = new Date('2026-08-13');
 ---
 
 <BaseLayout
@@ -16,22 +16,35 @@ const LAST_UPDATED = new Date('2026-08-10');
     <PageHeader
       updated={LAST_UPDATED}
       title="About"
-      lede="I'm Nicholas — a software developer with about a decade of experience across web development, scrum/product work, and senior engineering roles."
+      lede="My software is a tool to run my company and a toy to enjoy my free time. I don't abandon hard requirements when they're inconvenient, but I'll ship before my project is polished. If you want to see what I've wrestled with recently, check out the blog."
     />
 
     <div class="body">
       <Prose>
         <p>
-          I currently work at a home inspection company building reporting tools, internal developer tooling, and full-stack web applications.
+          When all you've got is an IDE, everything looks like it can be fixed with software. With a decade of experience as a software professional, I've got a few more tools than an IDE. However, I still use software to optimize and customize how I engage with my career, publishing business, and hobbies.
         </p>
 
         <p>
-          My happy place is the seam between "build the thing" and "understand what the thing should do." That's why I'm drawn to reporting and analytics work — it sits exactly there. Outside of my day job I run a small publishing company, write fiction, and build tools for hobbies I refuse to take seriously (the Pokémon TCG dashboard, Rubik's cube practice apps, emulators).
+          I regularly iterate through designs with coworkers, customers, and stakeholders to make sure I build them the software they need to do their jobs better. Hashing out an analytics dashboard face-to-face is the most rewarding part of my job. I get to watch an opaque corner of a business come into focus. And rather than assembling a rote report by hand, my coworkers can spend their morning analyzing the results.
+        </p>
+
+        <p>
+          My wife and I run an independent publishing company, which has taught me a lot about how to operate a profitable and sustainable business. Software is a tool I use to save money on website costs and improve the production value of our books. Many of my business problems become side projects because I see an opportunity for improvement in my workflow. A satisfying result of combining my two passions is that I've built sites and tools that other authors depend on.
+        </p>
+
+        <p>
+          I write code because it's fun. I write fiction because I enjoy it. I also collect Pokémon cards, solve the Rubik's cube, and play retro video games to relax when I'm not working. I build custom dashboards for my card collection, spaced-repetition algorithms for my cube practice, and emulators to understand more about retro consoles. Each of these teaches me more about my hobbies and more about software engineering.
+        </p>
+
+        <p>
+          Over the years I've picked up tips, tricks, and tools. Documenting and sharing is how I cement those lessons for myself and others. I maintain a blog focused on the problems I've faced and overcome. It's written for who I was early on in my career, but many lessons still apply to what I do today.
         </p>
       </Prose>
 
       <div class="page-cta">
-        <ActionLink href="/projects">see projects</ActionLink>
+        <ActionLink href="/projects" tone="muted">see projects</ActionLink>
+        <ActionLink href="/blog">read the blog</ActionLink>
       </div>
     </div>
   </div>
@@ -42,8 +55,13 @@ const LAST_UPDATED = new Date('2026-08-10');
     padding-block: var(--space-10);
   }
 
-  /* Keeps the page from dead-ending after the copy. */
+  /* Keeps the page from dead-ending after the copy. Primary sits last so it
+     lands on the right edge, matching the project card footer. */
   .page-cta {
     margin-top: var(--space-9);
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: var(--space-5);
   }
 </style>
