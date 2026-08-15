@@ -93,7 +93,9 @@ export type StackTech =
   | 'wasm'
   | 'eframe'
   | 'excel'
-  | 'github_actions';
+  | 'github_actions'
+  | 'axum'
+  | 'sqlx';
 
 /**
  * What kind of thing `liveUrl` points at, which decides how the link reads.
@@ -140,7 +142,7 @@ export const PROJECTS: ProjectConfig[] = [
     // Open source, but a real product someone can use.
     liveUrl: 'https://quiet-cube.com/',
     linkKind: 'product',
-    stack: ['postgres'],
+    stack: ['postgres', 'axum', 'sqlx'],
   },
   {
     slug: 'chip8-emulator',
