@@ -92,6 +92,7 @@ export interface ProjectStats {
   totalCommits: number | null;
   commits30d: number | null;
   latestRelease: string | null; // tag name; null if no release or not allowlisted
+  latestReleaseDate: string | null; // ISO published_at, for the recency accent
   languages: string[]; // empty if none clear the floor or not allowlisted
   activityWeeks: ActivityPoint[]; // 13 weekly buckets, oldest first
 }
@@ -467,6 +468,7 @@ async function fetchProjectStats(username: string): Promise<ProjectStats[]> {
         totalCommits: null,
         commits30d: null,
         latestRelease: null,
+        latestReleaseDate: null,
         languages: [],
         activityWeeks: [],
       };
@@ -514,10 +516,14 @@ async function fetchProjectStats(username: string): Promise<ProjectStats[]> {
       }
 
       try {
+        // `published_at`, not `created_at`: on a release object `created_at` is
+        // the underlying tag's commit date, which can predate the release by
+        // months if you tag as you go and cut the release later.
         const release = (await ghFetchOrNull(
           `/repos/${repo}/releases/latest`,
-        )) as { tag_name?: string } | null;
+        )) as { tag_name?: string; published_at?: string } | null;
         stats.latestRelease = release?.tag_name ?? null;
+        stats.latestReleaseDate = release?.published_at ?? null;
       } catch (err) {
         console.warn(`[github] latest release failed for ${repo}:`, err);
       }

@@ -25,10 +25,17 @@ const { activity, stats } = Astro.props;
 
 const days = daysSince(activity?.lastCommitDate);
 
-// Sienna marks a *recent* event, per the accent rules — a push inside the last
-// week, or a release that actually exists.
-const pushTone = days < 7 ? 'orange' : 'ink';
-const releaseTone = stats?.latestRelease ? 'orange' : 'ink';
+// Orange marks a *recent* event, per the accent rules: something that happened
+// inside the last week. Both accented cells key off elapsed time, never off
+// whether the cell has a value — a populated cell already announces itself, so
+// accenting on presence alone would leave the accent meaning nothing.
+//
+// daysSince returns Infinity without a date, so a repo with no release falls
+// through to ink on its own rather than needing a null check here.
+const RECENT_DAYS = 7;
+const pushTone = days < RECENT_DAYS ? 'orange' : 'ink';
+const releaseTone =
+  daysSince(stats?.latestReleaseDate) < RECENT_DAYS ? 'orange' : 'ink';
 ---
 
 <KpiGrid columns={4}>

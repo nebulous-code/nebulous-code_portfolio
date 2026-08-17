@@ -26,6 +26,7 @@
     "typescript": "^5.7.0"
   },
   "devDependencies": {
+    "wrangler": "4.123.0",
     "yaml": "^2.9.0"
   }
 }

@@ -1,0 +1,134 @@
+# Build and deploy nebulouscode.com to Cloudflare Pages.
+#
+# The build happens HERE, not on the host. Wrangler uploads the finished
+# dist/ with `pages deploy` (Cloudflare's "Direct Upload"), so Cloudflare's
+# git integration is deliberately not used. Two reasons:
+#
+#   1. The job that reports success is the job that actually built. The old
+#      Render setup POSTed a deploy hook and checked only that the POST was
+#      accepted, so a failed build still showed a green check here and the
+#      stale site stayed up. Nothing surfaced the failure.
+#   2. The build needs a cross-repo PAT (see below). Keeping it in Actions
+#      secrets means one place holds credentials rather than two.
+#
+# Triggers:
+#   - push to main    ship what you merged
+#   - schedule        every 6 hours. This is not a nicety: the site bakes
+#                     GitHub data (KPI cells, sparkline, last-push labels)
+#                     into static HTML at build time, and scheduled blog
+#                     posts only appear on a build after their release date.
+#                     Without this the site is frozen at the last push.
+#   - workflow_dispatch  deploy on demand from the Actions tab
+#
+# Required repo secrets (Settings -> Secrets and variables -> Actions):
+#
+#   GH_DATA_TOKEN          Fine-grained PAT with read access to the tracked
+#                          repos, including private ones. Read by
+#                          src/lib/github.ts at build time.
+#                          NOTE: it cannot be named GITHUB_TOKEN — GitHub
+#                          reserves the GITHUB_ prefix for its own automatic
+#                          token and rejects secrets that use it. That
+#                          automatic token is also useless here: it is scoped
+#                          to this repo alone and cannot read the others.
+#                          The name is mapped back to GITHUB_TOKEN below, so
+#                          no application code knows the difference.
+#
+#   CLOUDFLARE_API_TOKEN   Token with "Account - Cloudflare Pages - Edit".
+#   CLOUDFLARE_ACCOUNT_ID  A scoped Pages token cannot auto-detect this, and
+#                          omitting it fails with "Failed to automatically
+#                          retrieve account IDs for the logged in user."
+#
+# Content validation lives in validate-content.yml on purpose and is not
+# called from here. A taxonomy typo should read as "a post uses an
+# unregistered term", never as "the site is down", and must never hold up a
+# scheduled post.
+
+name: deploy
+
+on:
+  push:
+    branches: [main]
+  schedule:
+    # Every 6 hours, on the hour.
+    - cron: '0 */6 * * *'
+  workflow_dispatch: {}
+
+# Never let a cron run and a push run upload at the same time. Queue instead
+# of cancelling: a cancelled deploy would skip a rebuild that carries a
+# scheduled post past its release date.
+concurrency:
+  group: deploy
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    env:
+      # The Pages project name, which also sets the *.pages.dev subdomain.
+      PROJECT_NAME: nebulouscode
+    steps:
+      - uses: actions/checkout@v4
+
+      # Node 22, not the 20 that Render pinned. scripts/validate-content.ts
+      # runs under --experimental-strip-types, which needs 22+.
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      - name: Build
+        env:
+          GITHUB_TOKEN: ${{ secrets.GH_DATA_TOKEN }}
+        run: npm run build
+
+      # Wrangler comes from the lockfile, never `npx wrangler@4`. An unpinned
+      # call resolves to whatever Cloudflare published that morning, and a bad
+      # release takes deploys down with it. Bump it deliberately:
+      #   npm i -D wrangler@<version>
+      #
+      # --branch main makes this a production deploy, which requires the Pages
+      # project's production branch to be `main`. Getting that wrong puts the
+      # deploy in the preview environment, where production env vars do not
+      # apply.
+      #
+      # No functions/ directory exists — the contact page is a mailto: link,
+      # not a form — so this can run from the repo root. astro_sites has to
+      # deploy from the site directory for Pages Functions detection; that
+      # does not apply here.
+      - name: Deploy to Cloudflare Pages
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          # Fail early and by name. Wrangler's own error for a missing token is
+          # an auth failure that reads like a bad credential rather than an
+          # absent one, which sends you looking in the wrong place.
+          : "${CLOUDFLARE_API_TOKEN:?not set — add it under Settings > Secrets and variables > Actions}"
+          : "${CLOUDFLARE_ACCOUNT_ID:?not set — add it under Settings > Secrets and variables > Actions}"
+
+          W=./node_modules/.bin/wrangler
+
+          # Create the project on first run. `pages deploy` cannot do this
+          # non-interactively — it prompts — so a first deploy from CI against
+          # a project that doesn't exist just fails. Creating it here means the
+          # very first push works with no prior manual step.
+          #
+          # --production-branch main is the point of doing it this way rather
+          # than clicking through the dashboard. Every deploy passes
+          # --branch main, so if production is named anything else they all
+          # land in the *preview* environment, which has its own separate
+          # variables. Setting it explicitly makes that unmissable.
+          #
+          # Idempotent: on every subsequent run the project exists and this is
+          # a single list call.
+          if ! $W pages project list | grep -qw "$PROJECT_NAME"; then
+            echo "Pages project '$PROJECT_NAME' not found — creating it."
+            $W pages project create "$PROJECT_NAME" --production-branch main
+          fi
+
+          $W pages deploy dist --project-name "$PROJECT_NAME" --branch main

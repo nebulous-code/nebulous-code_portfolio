@@ -4,16 +4,19 @@ Operational notes for nebulouscode.com. This is the file to consult when adding 
 
 ## One-time deploy setup
 
-1. **Render**: create a new Static Site pointing at this repo. The `render.yaml` config will be detected automatically.
-2. **Render → Environment**: add `GITHUB_TOKEN` as a secret. Use a fine-grained PAT with:
-   - **Resource owner**: your account
-   - **Repository access**: All repositories (or just the ones tracked in `src/config/projects.ts`)
-   - **Permissions**: `Contents: read`, `Metadata: read`
-3. **Render → Settings → Deploy Hook**: copy the URL.
-4. **GitHub repo → Settings → Secrets and variables → Actions**: add a secret `RENDER_DEPLOY_HOOK_URL` with the URL from step 3.
-5. **Render → Custom Domain**: add `nebulouscode.com` and follow the DNS instructions.
+The site is hosted on Cloudflare Pages. GitHub Actions builds it and Wrangler uploads the result; see `docs/CLOUDFLARE_PAGES.md` for the full runbook, including creating the Pages project, the pilot on `pages.dev`, and cutover.
 
-After this, the cron in `.github/workflows/scheduled-rebuild.yml` fires every 6 hours and triggers a fresh Render build with up-to-date GitHub data.
+The short version — three repo secrets under Settings, Secrets and variables, Actions:
+
+| Secret | Value |
+|---|---|
+| `GH_DATA_TOKEN` | Fine-grained PAT: resource owner your account, repository access covering everything tracked in `src/config/projects.ts`, permissions `Contents: read` and `Metadata: read` |
+| `CLOUDFLARE_API_TOKEN` | Cloudflare token with `Account - Cloudflare Pages - Edit` |
+| `CLOUDFLARE_ACCOUNT_ID` | From the Cloudflare dashboard |
+
+The PAT cannot be called `GITHUB_TOKEN` — GitHub reserves that prefix and rejects it. `deploy.yml` maps `GH_DATA_TOKEN` onto the `GITHUB_TOKEN` environment variable at build time, so no application code changes.
+
+After this, `.github/workflows/deploy.yml` ships on every push to `main`, every 6 hours on a cron, and on demand.
 
 ## Daily operation
 
@@ -22,10 +25,12 @@ The site mostly maintains itself. The only routine touchpoint is `src/content/no
 To force an immediate rebuild (e.g., to reflect a commit that just happened):
 
 - Open the GitHub repo's **Actions** tab
-- Select the **scheduled-rebuild** workflow
+- Select the **deploy** workflow
 - Click **Run workflow** → **Run workflow**
 
 The next build will pick up fresh data within ~2 minutes.
+
+To undo a bad deploy without waiting for a rebuild, roll back in the Cloudflare dashboard: Workers & Pages, `nebulouscode`, Deployments, "Rollback to this deployment".
 
 ## Adding a new project
 
@@ -141,7 +146,7 @@ To release something early, change the date and either wait for the next cron or
 
 | | On a bad value |
 |---|---|
-| `npm run build` (what Render runs) | logs `[blog] unknown category …` and **publishes anyway** |
+| `npm run build` (what the deploy workflow runs) | logs `[blog] unknown category …` and **publishes anyway** |
 | `npm run validate:content` | **exits 1**, naming the file and the value |
 
 The `validate-content` GitHub workflow runs the second one on every push and PR. It is deliberately separate from `scheduled-rebuild`, which never consults it. So a mistyped category turns one check red and delays nothing, and a failed deploy is never mistaken for a content error.
@@ -209,15 +214,15 @@ Depends how far you want to go:
 
 ### Build fails
 
-Check the Render build log first. Common causes:
+Check the **deploy** workflow's log in the Actions tab first. Common causes:
 
-- **`GITHUB_TOKEN` not set or expired**: rotate the PAT in Render's environment settings.
+- **`GH_DATA_TOKEN` not set or expired**: rotate the PAT and update the repo secret. The build reads it as `GITHUB_TOKEN`.
 - **A tracked repo doesn't exist or was renamed**: the `getProjectActivity` call logs a warning per failing repo but doesn't crash. If it crashes, check `src/lib/github.ts` for an unhandled path.
 - **Astro version mismatch**: pin versions in `package.json` if a transitive update breaks the build.
 
 ### Sparkline looks empty
 
-- Confirm the build is using an authenticated PAT (Render env var present).
+- Confirm the build is using an authenticated PAT (the `GH_DATA_TOKEN` repo secret is present).
 - Check the events feed has activity in the last 90 days.
 - Force-trigger a rebuild and watch the build log for warnings from `[github]`.
 
@@ -227,7 +232,7 @@ Audit `src/config/projects.ts`. The repo should have `visibility !== 'public'` A
 
 ## Cost
 
-- **Render static**: free tier is sufficient.
+- **Cloudflare Pages**: free tier is sufficient — 500 builds/month against roughly 120 cron deploys plus pushes.
 - **GitHub Actions**: ~120 cron runs per month, each ~10 seconds. Far below the free tier ceiling for personal accounts.
 - **Domain**: registrar cost only.
 

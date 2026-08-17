@@ -1,0 +1,42 @@
+# Cache-Control for Cloudflare Pages.
+#
+# Ported from the `headers:` block in render.yaml so the caching behaviour
+# survives the move off Render. Pages reads this file from the build output;
+# copying it through `public/` is what puts it there.
+#
+# Astro dev and preview do NOT read this file — only Wrangler and a real
+# deploy do. Check it with:
+#
+#   npm run build && npx wrangler pages dev dist --port 8788
+#   curl -sI http://127.0.0.1:8788/ | grep -i cache-control
+#
+# Rules do NOT override each other. Cloudflare's docs are explicit: "An
+# incoming request which matches multiple rules' URL patterns will inherit
+# all rules' headers", and "if a header is applied twice in the _headers
+# file, the values are joined with a comma separator". So a /_astro/* asset
+# matches BOTH rules below and, without the `!` line, ends up with:
+#
+#   Cache-Control: public, max-age=0, must-revalidate, public, max-age=31536000, immutable
+#
+# which is not a year of caching — the first max-age wins, so every hashed
+# asset would be re-fetched on every page load. `! Cache-Control` detaches
+# the value inherited from /* before the real one is set. Verified against
+# Wrangler; do not remove that line.
+
+/*
+  # HTML is rebuilt every 6 hours with fresh GitHub data (KPI cells, sparkline,
+  # deploy stamp), so a cached page goes stale on a schedule. Revalidate every
+  # time rather than serving a visitor yesterday's commit counts.
+  Cache-Control: public, max-age=0, must-revalidate
+  # Defence-in-depth headers. The site ships no forms and no third-party
+  # embeds, so these cost nothing and close off clickjacking and MIME sniffing.
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: strict-origin-when-cross-origin
+  X-Frame-Options: DENY
+
+/_astro/*
+  # Astro fingerprints these filenames with a content hash, so a changed file
+  # is a different URL. That makes them safe to cache for a year — the only
+  # way to serve a stale one is to request a name that no longer exists.
+  ! Cache-Control
+  Cache-Control: public, max-age=31536000, immutable
