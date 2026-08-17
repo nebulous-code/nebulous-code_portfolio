@@ -3,7 +3,9 @@
  * BaseLayout — the shell every page inherits.
  *
  * Provides:
- *   - Sticky top nav with active-page indicator and "last deployed" status
+ *   - Sticky top nav with active-page indicator and "last deployed" status.
+ *     Below 640px the links collapse behind a hamburger, which frees enough
+ *     width that the deploy stamp can stay visible on a phone.
  *   - Minimal footer
  *   - <html> chrome, font links, meta
  *   - No imposed content width — pages opt into .container-wide or
@@ -120,6 +122,17 @@ const buildAbsolute = `${buildIso.slice(0, 16).replace('T', ' ')} UTC`;
   <body>
     <nav class="site-nav">
       <div class="nav-inner">
+        <button
+          id="nav-toggle"
+          class="nav-toggle"
+          type="button"
+          aria-label="Menu"
+          aria-expanded="false"
+          aria-controls="nav-links"
+        >
+          <span class="bars" aria-hidden="true"></span>
+        </button>
+
         <a
           href="/"
           class="brand"
@@ -130,7 +143,7 @@ const buildAbsolute = `${buildIso.slice(0, 16).replace('T', ' ')} UTC`;
           <span class="brand-text">nebulous-code</span>
         </a>
 
-        <ul class="nav-links">
+        <ul id="nav-links" class="nav-links">
           {
             navItems.map((item) => (
               <li>
@@ -197,6 +210,44 @@ const buildAbsolute = `${buildIso.slice(0, 16).replace('T', ' ')} UTC`;
       })();
     </script>
 
+    {/*
+      Mobile nav toggle. Deliberately a <button> with aria-expanded rather than
+      <details>: recent Chrome hides details content via ::details-content with
+      content-visibility, which author CSS can't reliably override, so the
+      desktop layout would depend on browser internals. Inline for the same
+      reason as the script above — no extra request.
+    */}
+    <script is:inline>
+      (function () {
+        var btn = document.getElementById('nav-toggle');
+        var list = document.getElementById('nav-links');
+        if (!btn || !list) return;
+        function set(open) {
+          btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+          list.classList.toggle('open', open);
+        }
+        btn.addEventListener('click', function (e) {
+          // Stop this reaching the document handler below, which would see
+          // the opening click as an outside click and close it immediately.
+          e.stopPropagation();
+          set(btn.getAttribute('aria-expanded') !== 'true');
+        });
+        // Anything outside the button or the menu closes it. Following a link
+        // inside the menu navigates away, so that case takes care of itself.
+        document.addEventListener('click', function (e) {
+          if (btn.getAttribute('aria-expanded') !== 'true') return;
+          if (btn.contains(e.target) || list.contains(e.target)) return;
+          set(false);
+        });
+        document.addEventListener('keydown', function (e) {
+          if (e.key === 'Escape' && btn.getAttribute('aria-expanded') === 'true') {
+            set(false);
+            btn.focus();
+          }
+        });
+      })();
+    </script>
+
     <style>
       /*
        * ───── Container utilities ─────
@@ -238,6 +289,57 @@ const buildAbsolute = `${buildIso.slice(0, 16).replace('T', ' ')} UTC`;
         display: flex;
         align-items: center;
         gap: var(--space-9);
+        /* Anchors the mobile dropdown. */
+        position: relative;
+      }
+
+      /*
+       * Hamburger. Hidden above 640px, where the links sit inline.
+       *
+       * Drawn in CSS rather than SVG — DESIGN_DOC §9 rules out decorative SVG
+       * iconography, and three borders render more predictably at this size
+       * than a glyph that Departure Mono may not carry.
+       */
+      .nav-toggle {
+        display: none;
+        background: transparent;
+        border: 0;
+        padding: var(--space-2) 0;
+        color: var(--color-ink-muted);
+        cursor: pointer;
+        line-height: 0;
+      }
+
+      .nav-toggle:hover {
+        color: var(--color-ink);
+      }
+
+      .bars,
+      .bars::before,
+      .bars::after {
+        display: block;
+        width: 16px;
+        height: 1px;
+        background: currentColor;
+      }
+
+      .bars {
+        position: relative;
+      }
+
+      .bars::before,
+      .bars::after {
+        content: '';
+        position: absolute;
+        left: 0;
+      }
+
+      .bars::before {
+        top: -5px;
+      }
+
+      .bars::after {
+        top: 5px;
       }
 
       .brand {
@@ -349,17 +451,64 @@ const buildAbsolute = `${buildIso.slice(0, 16).replace('T', ' ')} UTC`;
       }
 
       /* ───── Mobile ───── */
+      /*
+       * Below 640px the five nav labels plus the brand needed ~407px of the
+       * ~332px available, so the row overflowed and took the page's right
+       * gutter with it. Collapsing the links into a dropdown recovers that
+       * width — enough that the deploy stamp can come back too.
+       */
       @media (max-width: 640px) {
         .nav-inner {
           gap: var(--space-5);
           padding-inline: var(--space-6);
         }
+
+        .nav-toggle {
+          display: block;
+        }
+
+        /* Out of flow, so the links cost the header row no width at all. */
         .nav-links {
-          gap: var(--space-5);
-        }
-        .status-block {
           display: none;
+          position: absolute;
+          top: 100%;
+          left: 0;
+          right: 0;
+          flex: none;
+          flex-direction: column;
+          gap: 0;
+          background: var(--color-bg);
+          border-bottom: 1px solid var(--color-line);
+          padding: var(--space-3) var(--space-6) var(--space-6);
         }
+
+        .nav-links.open {
+          display: flex;
+        }
+
+        .nav-links li {
+          padding-block: var(--space-4);
+        }
+
+        .nav-link {
+          font-size: 14px;
+        }
+
+        /* An underline under a full-width row reads as a rule, so the active
+           item leans on colour and aria-current instead. */
+        .nav-link.active {
+          border-bottom-color: transparent;
+        }
+
+        .status-block {
+          display: flex;
+          margin-left: auto;
+        }
+
+        .status-text {
+          white-space: nowrap;
+        }
+
         :global(.container-wide),
         :global(.container-narrow) {
           padding-inline: var(--space-6);

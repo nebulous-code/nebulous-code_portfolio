@@ -1,6 +1,6 @@
 # nebulouscode.com
 
-Source for [nebulouscode.com](https://nebulouscode.com), my personal portfolio site. Astro 5 + Tailwind v4 + MDX, deployed as a static site to Render, with GitHub activity data baked in at build time on a 6-hour cron. Ships zero JavaScript.
+Source for [nebulouscode.com](https://nebulouscode.com), my personal portfolio site. Astro 5 + Tailwind v4 + MDX, deployed as a static site to Render, with GitHub activity data baked in at build time on a 6-hour cron. Ships no JavaScript bundles — two small inline scripts, for the relative deploy timestamp and the mobile nav toggle.
 
 This README focuses on how the site is built and why. For day-to-day operational notes (adding projects, deploy setup, transitions) see [`docs/MAINTENANCE.md`](docs/MAINTENANCE.md). For active work and roadmap see [`docs/TODO.md`](docs/TODO.md).
 

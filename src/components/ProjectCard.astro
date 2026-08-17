@@ -199,4 +199,29 @@ const eyebrowText = `project · ${statusLabel}`;
     margin-left: auto;
   }
 
+  /*
+   * On a phone the footer's contents can't fit on one line — a 120px sparkline
+   * plus two nowrap action links needs roughly 374px inside a card that has
+   * about 286px to give. Without wrapping, the row pushed past the right edge
+   * and took the page's right gutter with it, which read as uneven margins
+   * rather than as an overflow.
+   */
+  @media (max-width: 640px) {
+    .card-footer {
+      flex-wrap: wrap;
+      align-items: flex-start;
+    }
+
+    /*
+     * Once wrapped the links get their own line, so `margin-left: auto` has
+     * nothing to push against. Taking the full width and justifying to the end
+     * keeps them on the right edge, where they sit on desktop.
+     */
+    .actions {
+      white-space: normal;
+      width: 100%;
+      justify-content: flex-end;
+    }
+  }
+
 </style>
