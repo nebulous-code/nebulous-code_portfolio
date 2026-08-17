@@ -1,0 +1,54 @@
+---
+/**
+ * 404 — served for any URL that doesn't match a route.
+ *
+ * Astro emits this as dist/404.html, which Cloudflare Pages serves
+ * automatically with a 404 status. There's no config to wire up; the filename
+ * is the contract.
+ *
+ * Deliberately just a header and two links. A dead end is a bad place to make
+ * someone read, so the job here is to say what happened in one line and point
+ * at the two pages worth landing on instead.
+ */
+
+import BaseLayout from '~/layouts/BaseLayout.astro';
+import ActionLink from '~/components/ActionLink.astro';
+import PageHeader from '~/components/PageHeader.astro';
+---
+
+<BaseLayout
+  title="Page not found — nebulous-code"
+  description="That page doesn't exist. Head to the projects page or get in touch."
+>
+  <div class="container-narrow">
+    <PageHeader
+      eyebrow="404"
+      title="Page not found"
+      lede="There's nothing here. One of us made a mistake, and odds are good it's me. Check out the projects page or email me if you're looking for something specific."
+    />
+
+    <div class="body">
+      <div class="page-cta">
+        <ActionLink href="/contact" tone="muted">contact me</ActionLink>
+        <ActionLink href="/projects">see projects</ActionLink>
+      </div>
+    </div>
+  </div>
+</BaseLayout>
+
+<style>
+  .body {
+    padding-block: var(--space-10);
+  }
+
+  /* Same CTA row as /about and /resume: secondary on the left, primary last so
+     it lands on the right edge. Contact rather than about, because someone who
+     hit a dead end wants the thing they were after or a way to ask for it. */
+  .page-cta {
+    margin-top: var(--space-9);
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: var(--space-5);
+  }
+</style>
