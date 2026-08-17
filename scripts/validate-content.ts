@@ -7,12 +7,12 @@
  * A typo in a category should tell you loudly and fail a pull request. It
  * should never stop a scheduled post from going out on time, which is why
  * this lives here rather than in the Zod schema, and why the workflow that
- * runs it is separate from scheduled-rebuild.yml.
+ * runs it is separate from deploy.yml.
  *
  * Imports the real vocabularies from src/config rather than restating them,
  * so this can't drift from what the site actually uses. That needs Node's
  * type stripping (Node >= 22 with --experimental-strip-types, on by default
- * from 23.6). Render pins Node 20 but never runs this.
+ * from 23.6).
  */
 
 import { readdirSync, readFileSync } from 'node:fs';

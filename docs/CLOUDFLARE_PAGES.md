@@ -70,7 +70,7 @@ curl -sI https://nebulouscode.pages.dev/_astro/<hashed>.css | grep -i cache-cont
 2. Because the zone is already in this Cloudflare account, the DNS record is created automatically. There is no nameserver change and no propagation wait.
 3. Decide the canonical hostname and make the redirect match it — see below.
 4. Confirm the live site, then suspend the Render service.
-5. Delete `render.yaml` and `.github/workflows/scheduled-rebuild.yml`.
+5. Delete the old host's config — for the Render migration this was `render.yaml` and `.github/workflows/scheduled-rebuild.yml`, both removed once Render was off.
 
 Keep Render running until the Cloudflare domain is confirmed good. Both can serve simultaneously; only DNS decides who answers.
 

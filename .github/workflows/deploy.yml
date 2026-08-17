@@ -72,8 +72,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      # Node 22, not the 20 that Render pinned. scripts/validate-content.ts
-      # runs under --experimental-strip-types, which needs 22+.
+      # Node 22: scripts/validate-content.ts runs under
+      # --experimental-strip-types, which needs 22+.
       - uses: actions/setup-node@v4
         with:
           node-version: 22

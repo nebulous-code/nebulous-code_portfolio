@@ -149,7 +149,7 @@ To release something early, change the date and either wait for the next cron or
 | `npm run build` (what the deploy workflow runs) | logs `[blog] unknown category …` and **publishes anyway** |
 | `npm run validate:content` | **exits 1**, naming the file and the value |
 
-The `validate-content` GitHub workflow runs the second one on every push and PR. It is deliberately separate from `scheduled-rebuild`, which never consults it. So a mistyped category turns one check red and delays nothing, and a failed deploy is never mistaken for a content error.
+The `validate-content` GitHub workflow runs the second one on every push and PR. It is deliberately separate from `deploy`, which never consults it. So a mistyped category turns one check red and delays nothing, and a failed deploy is never mistaken for a content error.
 
 Renaming a category after posts exist means editing their frontmatter and breaking any shared `/blog/category/…` URL — worth settling the vocabulary early.
 

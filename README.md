@@ -1,12 +1,15 @@
 # nebulouscode.com
 
-Source for [nebulouscode.com](https://nebulouscode.com), my personal portfolio site. Astro 5 + Tailwind v4 + MDX, deployed as a static site to Render, with GitHub activity data baked in at build time on a 6-hour cron. Ships no JavaScript bundles — two small inline scripts, for the relative deploy timestamp and the mobile nav toggle.
+Source for [nebulouscode.com](https://nebulouscode.com), my personal portfolio site. Astro 5 + Tailwind v4 + MDX, deployed as a static site to Cloudflare Pages, with GitHub activity data baked in at build time on a 6-hour cron. Ships no JavaScript bundles — two small inline scripts, for the relative deploy timestamp and the mobile nav toggle.
 
 This README focuses on how the site is built and why. For day-to-day operational notes (adding projects, deploy setup, transitions) see [`docs/MAINTENANCE.md`](docs/MAINTENANCE.md). For active work and roadmap see [`docs/TODO.md`](docs/TODO.md).
 
 ## Architecture at a glance
 
 ```
+GitHub Actions ── push to main · every 6h · manual trigger
+             │
+             ▼
 GitHub API ──┐
              │  (build-time fetch, sanitization layer)
              ▼
@@ -15,15 +18,13 @@ GitHub API ──┐
              ▼
    Astro build (static HTML)
              │
-             ▼
-        Render CDN
-             ▲
-             │  (Deploy Hook)
-             │
-   GitHub Actions cron ── every 6h + manual trigger
+             ▼    (wrangler pages deploy — direct upload)
+   Cloudflare Pages
 ```
 
-The site is fully static at request time — no API calls, no server runtime, no cold starts. Freshness comes from rebuilding on a schedule, not from runtime fetches. The tradeoff is up to ~6 hours of staleness; the upside is zero rate-limit risk, zero hosting cost beyond Render's static tier, and a simple deploy story.
+The build runs in Actions and Wrangler uploads the result, rather than the host building from a git hook. That way the job reporting success is the job that actually built — a failed build shows up as a red check instead of silently leaving the previous site in place.
+
+The site is fully static at request time — no API calls, no server runtime, no cold starts. Freshness comes from rebuilding on a schedule, not from runtime fetches. The tradeoff is up to ~6 hours of staleness; the upside is zero rate-limit risk, no hosting cost on Cloudflare's free tier, and a simple deploy story.
 
 ## Stack and rationale
 
@@ -32,7 +33,7 @@ The site is fully static at request time — no API calls, no server runtime, no
 | **Astro 5** | Content-heavy sites with mostly static output. Frontmatter scripts run at build time, so GitHub data is fetched once and baked into HTML. |
 | **Tailwind v4** | CSS-based config via `@theme` blocks aligns naturally with a design-tokens approach. No JS config file. |
 | **MDX** | Case studies as long-form prose with optional embedded interactive components. |
-| **Render static** | Already used for other projects in the same portfolio, simple deploy hook for the cron-rebuild pattern. |
+| **Cloudflare Pages** | Same deploy pattern as my other Astro sites, so there is one mental model for both. Direct upload from Actions keeps the build and its credentials in one place, and Pages keeps every deployment for one-click rollback. |
 | **Static-only output** | Site stays live even if every external dependency fails. Build is the only place anything can break. |
 
 ## The data pipeline
@@ -72,9 +73,8 @@ This matters because the authenticated PAT used at build time can see private re
 ```
 .
 ├── astro.config.mjs              # Astro + MDX + Tailwind v4
-├── render.yaml                   # Render static site config
 ├── .github/workflows/
-│   ├── scheduled-rebuild.yml     # Cron deploy trigger — never gated on checks
+│   ├── deploy.yml                # Build + deploy to Cloudflare Pages; cron every 6h
 │   └── validate-content.yml      # Frontmatter + typecheck, off the release path
 ├── scripts/
 │   └── validate-content.ts       # npm run validate:content
@@ -112,7 +112,7 @@ cp .env.example .env             # optional: add a GITHUB_TOKEN
 npm run dev
 ```
 
-Open `http://localhost:4321`.
+Open `http://localhost:7574`.
 
 ## Build
 

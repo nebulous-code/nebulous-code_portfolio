@@ -1,9 +1,8 @@
 # Content validation for nebulouscode.com
 #
 # Why this is a separate workflow:
-#   This gate is deliberately NOT on the release path. scheduled-rebuild.yml
-#   fires every 6 hours and triggers a Render deploy; it does not consult this
-#   workflow and never will. So a mistyped category fails here and nothing
+#   This gate is deliberately NOT on the release path. deploy.yml builds and
+#   ships every 6 hours; it does not consult this workflow and never will. So a mistyped category fails here and nothing
 #   else, and a failed deploy is never mistaken for a content problem.
 #
 #   A post with a bad category still publishes on time. The build logs a
@@ -17,7 +16,6 @@
 #
 # Node 22 is required for --experimental-strip-types, which lets the validator
 # import the real vocabularies from src/config instead of restating them.
-# Render pins Node 20 but never runs this.
 
 name: validate-content
 
