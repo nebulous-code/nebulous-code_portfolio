@@ -64,9 +64,9 @@ RSS lives at `/rss.xml`, with autodiscovery in every page head.
 
 ### Sanitization layer
 
-`src/lib/github.ts` is the single boundary between raw GitHub API responses and rendered output. It enforces a deny-by-default rule: counts and dates always pass through, but commit messages, repo names, SHAs, and branches only pass through for repos explicitly opted in via the `allowlistContent` flag in `src/config/projects.ts`.
+`src/lib/github.ts` is the single boundary between raw GitHub API responses and rendered output. It enforces a deny-by-default rule, drawn around quoting rather than around visibility: counts, dates, release tags, and language breakdowns always pass through, because they describe a repo rather than reproduce anything written in it. Commit messages, repo names, SHAs, and branches only pass through for repos explicitly opted in via the `allowlistContent` flag in `src/config/projects.ts`.
 
-This matters because the authenticated PAT used at build time can see private repo activity. The aggregate sparkline reflects all my work (public + private), but no private content reaches the rendered page. When a public repo transitions to private (e.g., a free demo becoming a paid SaaS), flipping the project's `allowlistContent` flag to `false` is sufficient to stop content leakage on the next build.
+This matters because the authenticated PAT used at build time can see private repo activity. The aggregate sparkline reflects all my work (public + private), but no private content reaches the rendered page. When a public repo transitions to private (e.g., a free demo becoming a paid SaaS), flipping the project's `allowlistContent` flag to `false` is sufficient to stop content leakage on the next build. A private project still reports its version tag and languages, so its card is as complete as any other — a repo going private changes what the site can quote, not what it can count.
 
 ## Project structure
 

@@ -93,7 +93,7 @@ Two sources, merged for display:
 | `repo` | `owner/name` format. Used by the data pipeline. |
 | `visibility` | `'public'`, `'private-saas'`, or `'private-wip'`. Drives card affordances. |
 | `tracked` | If true, contributes to the activity sparkline (count + date only). |
-| `allowlistContent` | Opt-in to showing commit messages, SHAs, branch names. Default-deny. Should always be `false` if `visibility !== 'public'`. |
+| `allowlistContent` | Opt-in to showing commit messages, SHAs, branch names. Default-deny. Should always be `false` if `visibility !== 'public'`. Does **not** gate release tags or languages — those describe the repo rather than quote it and always pass. |
 | `liveUrl` | Where a visitor can use the thing. Shown on the card and the summary page. Omit if there's nowhere to send them yet. |
 | `linkKind` | How `liveUrl` is labeled: `'demo'` (default) or `'product'`. Independent of `visibility` — an open repo can still be a real product. |
 | `stack` | Technologies the GitHub languages API can't see, because they're used rather than written — Postgres, Docker, a framework. Merged with the measured languages for display. Typed as a union, so a typo is a TypeScript error. |
@@ -190,11 +190,14 @@ The expected path: a free demo project gains real users, gets paywalled features
 Next build will:
 
 - Continue counting commits in the sparkline (PAT can read private repos)
+- Continue showing the latest release and the language row — those aren't gated
 - Stop showing commit messages on the project card
 - Replace "View Code" links with "Visit product" links
 - Keep the case study live with its new framing
 
 The deny-by-default sanitization in `src/lib/github.ts` means the only way to leak content from a private repo is to leave both `visibility: 'public'` and `allowlistContent: true`. As long as you flip both, you're safe.
+
+The boundary is drawn around *quoting*, not around visibility. Counts, dates, release tags and language breakdowns pass for every repo, so a private project's card looks like any other; `allowlistContent` governs text written inside the repo. If you add a field to `ProjectStats` that reproduces repo content, it needs its own gate — it will not inherit one.
 
 ## Removing a project
 
@@ -229,6 +232,8 @@ Check the **deploy** workflow's log in the Actions tab first. Common causes:
 ### A private repo's content is showing on the site
 
 Audit `src/config/projects.ts`. The repo should have `visibility !== 'public'` AND `allowlistContent: false`. If both are correct and content is still showing, the issue is upstream of the sanitization layer — open `src/lib/github.ts` and look for any code path that returns repo content without checking the allowlist.
+
+Note first that a release tag and a language row are **expected** on a private project and are not a leak — they are not behind the allowlist. The things that should never appear are commit messages, SHAs, branch names, and the repo name itself.
 
 ## Cost
 

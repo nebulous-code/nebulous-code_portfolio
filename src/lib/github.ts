@@ -11,12 +11,14 @@
  *   PAT with read access to public repos and to private repos you own. Without
  *   the token, repo discovery and commit history are limited to public repos;
  *   with it, private and collaborator repos contribute to the activity count
- *   too (counts only — content is gated by the allowlist rules below).
+ *   too (content — commit message text — is gated by the rules below).
  *
  * Sanitization rules (the deny-by-default stance):
- *   - Counts and dates ALWAYS pass through, regardless of repo visibility.
- *     This is what powers the sparkline. A count of activity does not leak
- *     proprietary information.
+ *   - Counts, dates, version tags and language breakdowns ALWAYS pass
+ *     through, regardless of repo visibility. These describe a repo rather
+ *     than quoting it: a commit count, a release you chose to publish, and a
+ *     byte-share percentage leak no proprietary information, and this is what
+ *     powers the sparkline and the KPI cells on every card.
  *   - Repo names, commit messages, SHAs, branch names ONLY pass through for
  *     repos in the content allowlist (PROJECTS entries with
  *     allowlistContent: true).
@@ -82,18 +84,26 @@ export interface ProjectActivity {
 }
 
 /**
- * Per-project card stats. Counts are always populated (they're just numbers);
- * `latestRelease` and `languages` describe repo *content* and are therefore
- * gated behind the allowlist, so a repo going private stops disclosing its
- * tech stack and version tags on the next build.
+ * Per-project card stats. Every field here is a fact ABOUT a repo rather than
+ * text written inside one, so none of it is gated by the content allowlist —
+ * a private project reports its version tag and languages exactly like a
+ * public one, which is why every card can show the same four cells.
+ *
+ * A version tag and a byte-share breakdown sit with the commit counts, not
+ * with commit messages: you publish a release deliberately, and "61% Astro"
+ * discloses no more than "63 commits" does. The allowlist still governs the
+ * genuinely disclosing thing — commit message text, in getProjectActivity.
+ *
+ * Keep it that way. Anything added here that quotes repo *content* needs its
+ * own explicit gate rather than inheriting this function's openness.
  */
 export interface ProjectStats {
   repo: string;
   totalCommits: number | null;
   commits30d: number | null;
-  latestRelease: string | null; // tag name; null if no release or not allowlisted
+  latestRelease: string | null; // tag name; null if the repo has no release
   latestReleaseDate: string | null; // ISO published_at, for the recency accent
-  languages: string[]; // empty if none clear the floor or not allowlisted
+  languages: string[]; // empty if none clear the floor
   activityWeeks: ActivityPoint[]; // 13 weekly buckets, oldest first
 }
 
@@ -456,7 +466,6 @@ export function getProjectStats(username: string): Promise<ProjectStats[]> {
 
 async function fetchProjectStats(username: string): Promise<ProjectStats[]> {
   const repos = getTrackedRepos();
-  const allowlist = getContentAllowlist();
   const since = new Date(
     Date.now() - ACTIVITY_DAYS * 24 * 60 * 60 * 1000,
   ).toISOString();
@@ -507,12 +516,6 @@ async function fetchProjectStats(username: string): Promise<ProjectStats[]> {
         stats.activityWeeks = weeklyBuckets(daily);
       } catch (err) {
         console.warn(`[github] commit history failed for ${repo}:`, err);
-      }
-
-      // Everything below describes repo content, so it stops here for repos
-      // that aren't explicitly allowlisted.
-      if (!allowlist.has(repo)) {
-        return stats;
       }
 
       try {

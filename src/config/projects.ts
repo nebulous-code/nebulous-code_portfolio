@@ -46,6 +46,14 @@
  *                     for the sanitization layer.
  *                     Should always be false for visibility !== 'public'.
  *
+ *                     It governs quoted repo *content* and nothing else.
+ *                     Release tags and language breakdowns are NOT behind it:
+ *                     those describe a repo rather than quote it, so every
+ *                     card fills the same four KPI cells whether its repo is
+ *                     public or private. Widening this flag to cover more
+ *                     fields is how content leaks by accident — add a field
+ *                     to the open set deliberately, or give it its own gate.
+ *
  * - `liveUrl`         Where a visitor can actually use the thing (e.g.,
  *                     cards.nebulouscode.com). Surfaced on both the project
  *                     card and the summary page. Omit if there's nowhere to
@@ -160,10 +168,11 @@ export const PROJECTS: ProjectConfig[] = [
     allowlistContent: false,
     liveUrl: 'https://nicholaslicalsi.com',
     linkKind: 'product',
-    // Doing more work here than on the other projects: with allowlistContent
-    // false the languages endpoint is never read, so this list is the entire
-    // technology row rather than a supplement to it. `astro` earns a place it
-    // wouldn't on a public repo, where Linguist would report it.
+    // Asserted entries only; the measured languages (Astro, TypeScript) are
+    // fetched for private repos too and merge with these at render time.
+    // `astro` is kept because withoutDuplicates() drops an asserted entry the
+    // measured list already covers, so it costs nothing and keeps the row
+    // sensible if this repo's language mix shifts.
     stack: ['astro', 'cloudflare_pages', 'github_actions', 'remark42', 'wrangler'],
   },
   {
