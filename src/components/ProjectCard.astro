@@ -22,6 +22,7 @@ import Sparkline from './Sparkline.astro';
 import { getLiveLink } from '~/config/projects';
 import { pickFeaturedTech } from '~/lib/stack';
 import { getProjectDisplay } from '~/lib/content';
+import { termLabel } from '~/lib/labels';
 import { daysSince } from '~/lib/dates';
 import type { ProjectConfig } from '~/config/projects';
 import type { ProjectActivity, ProjectStats } from '~/lib/github';
@@ -85,7 +86,7 @@ const eyebrowText = `project · ${statusLabel}`;
   {tagline ? <p class="description">{tagline}</p> : null}
 
   {featuredTech.length > 0 ? (
-    <p class="languages">{featuredTech.join(' · ')}</p>
+    <p class="languages">{featuredTech.map(termLabel).join(' · ')}</p>
   ) : null}
 
   <ProjectStatsGrid activity={activity} stats={stats} />

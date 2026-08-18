@@ -23,6 +23,7 @@ import { getProjectBySlug } from '~/config/projects';
 import Badge from '~/components/Badge.astro';
 import { getPostsForProject, slugify } from '~/lib/content';
 import { allTech } from '~/lib/stack';
+import { termLabel } from '~/lib/labels';
 import { GITHUB_USERNAME } from '~/config/projects';
 import { getProjectActivity, getProjectStats } from '~/lib/github';
 
@@ -67,13 +68,13 @@ const tech = allTech(stats?.languages ?? [], project?.stack ?? []);
         lede={entry.data.summary}
       >
         <div class="header-block">
-          {tech.length > 0 ? <p class="tech">{tech.join(' · ')}</p> : null}
+          {tech.length > 0 ? <p class="tech">{tech.map(termLabel).join(' · ')}</p> : null}
 
           {entry.data.tags.length > 0 ? (
             <div class="chips">
               {entry.data.tags.map((tag) => (
                 <a class="chip-link" href={`/tags/${slugify(tag)}`}>
-                  <Badge tone="blue">{tag}</Badge>
+                  <Badge tone="blue">{termLabel(tag)}</Badge>
                 </a>
               ))}
             </div>

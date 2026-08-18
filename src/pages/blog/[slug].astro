@@ -16,6 +16,7 @@ import { render } from 'astro:content';
 import { getProjectBySlug } from '~/config/projects';
 import { getInheritedTech, getProjectDisplay, getPublishedPosts, slugify } from '~/lib/content';
 import { allTech } from '~/lib/stack';
+import { termLabel } from '~/lib/labels';
 
 export async function getStaticPaths() {
   const posts = await getPublishedPosts();
@@ -52,10 +53,10 @@ const languages = allTech(tech.languages, tech.stack);
               </span>
             ) : null}
             <span class="seg">
-              <a class="category" href={`/blog/category/${slugify(category)}`}>{category}</a>
+              <a class="category" href={`/blog/category/${slugify(category)}`}>{termLabel(category)}</a>
             </span>
             {languages.length > 0 ? (
-              <span class="seg tech">{languages.join(' · ')}</span>
+              <span class="seg tech">{languages.map(termLabel).join(' · ')}</span>
             ) : null}
           </p>
 
@@ -63,7 +64,7 @@ const languages = allTech(tech.languages, tech.stack);
             <div class="chips">
               {tags.map((tag) => (
                 <a class="chip-link" href={`/tags/${slugify(tag)}`}>
-                  <Badge tone="blue">{tag}</Badge>
+                  <Badge tone="blue">{termLabel(tag)}</Badge>
                 </a>
               ))}
             </div>

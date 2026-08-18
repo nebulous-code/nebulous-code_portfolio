@@ -2,6 +2,7 @@
 import BaseLayout from '~/layouts/BaseLayout.astro';
 import ActionLink from '~/components/ActionLink.astro';
 import PageHeader from '~/components/PageHeader.astro';
+import { termLabel, termTitle } from '~/lib/labels';
 import PostCard from '~/components/PostCard.astro';
 import { getCategoryValues, getPostsByCategory } from '~/lib/content';
 
@@ -19,13 +20,13 @@ const posts = await getPostsByCategory(category!);
 ---
 
 <BaseLayout
-  title={`${value} — nebulous-code`}
-  description={`${posts.length} post${posts.length === 1 ? '' : 's'} in the ${value} category, by Nicholas Licalsi.`}
+  title={`${termTitle(value)} — nebulous-code`}
+  description={`${posts.length} post${posts.length === 1 ? '' : 's'} in the ${termLabel(value)} category, by Nicholas Licalsi.`}
 >
   <div class="container-wide">
     <PageHeader
       eyebrow="CATEGORY"
-      title={value}
+      title={termTitle(value)}
       lede={`${posts.length} post${posts.length === 1 ? '' : 's'} in this category.`}
     />
 

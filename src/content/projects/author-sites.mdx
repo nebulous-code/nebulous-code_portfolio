@@ -1,0 +1,59 @@
+---
+slug: author-sites
+title: Author Site Infrastructure
+tagline: One codebase for five author websites, run by one person.
+summary: Five WordPress author sites rebuilt as one static Astro monorepo, with shared components and scheduled posts that release without a server.
+publishedAt: 2026-07-01
+tags:
+  - publishing
+  - static_site
+  - web_performance
+featured: false
+hasArchitectureSection: false
+---
+
+Five author websites for my publishing company, all using one codebase. Shared components and posts that automatically release are what keep them from becoming five times the work.
+
+**Status:** Shipped
+
+**Released:** July 2026
+
+## Why I Built It
+
+I maintain the websites for my publishing company—mine, plus the ones belonging to the authors I work with. WordPress was the obvious choice ten years ago when I was starting out, and for a long time that was good enough. But as the number of sites grew so did the plugin updates, outages, and hosting bills. Hosting had quietly become one of the company's largest line items.
+
+After building out this site, nebulouscode, I was comfortable enough with Astro to take on this challenge. And the migration paid off big time. Lighthouse scores on the slowest sites went from the low 60s into the high 80s and 90s. The old setup needed a server running around the clock, while these sites are static and automated by a five-minute build job that runs each morning. Posts still go out on a schedule, which was the thing I assumed I'd have to give up by migrating to a static site.
+
+## What It Does
+
+- Sites automatically update while I sleep
+- Components are shared across sites without duplicating styles
+- Readers can comment without signing in
+- Pages load significantly faster than they used to
+
+## Who It's For
+
+The sites themselves are for readers who want to find and support my books and the books of the authors I work with. They can read and comment on posts without having to create an account. The design carried over from the old sites so this was infrastructure work, rather than design work. Ideally, no one will be able to tell that anything changed.
+
+The system behind maintaining the sites is for me. I'm the only one who ever used the WordPress backend. The authors email me when something needs posting and I update the sites. Because of this I never had to rebuild the self-service editor.
+
+## How It Works
+
+A single monorepo hosts shared components for all five sites to leverage. Each component is styled for the site to match its own look and feel, but the underlying code is kept in a global source directory. Content is drafted in Markdown with a YAML header that holds metadata like tags, categories, and release date.
+
+I leverage two GitHub Actions to handle the deployment. One Action rebuilds and deploys whenever I push a change to make sure my latest updates are out when I'm done with them. Another Action runs every morning at 7:30. The 7:30 run checks whether any posts are scheduled to release, and rebuilds only if something comes due—no new post means no new deployment. There's no server involved, so nothing is sitting there waiting to notice that a post's date has arrived—the scheduling lives in the repo instead of in a request. The output is static files served via Cloudflare Pages, which has plenty of overhead for my traffic needs.
+
+I used Wrangler for my local development rather than `astro dev` because the sites depend on URL redirects, Cloudflare Pages Functions, and security headers that `astro dev` couldn't serve accurately. Wrangler was so useful that it was leveraged in the pipeline to serve builds to Cloudflare through my Actions. Image optimizations are routed through Astro's build-time image pipeline, so that the repo can store the high-quality originals while visitors get a resized and re-encoded version for fast load times.
+
+Comments run on Remark42, with Cloudflare Turnstile and honeypot fields to keep bots out. A moderation queue behind the scenes lets me manage comments. This allows readers to leave a comment without making an account to reduce the barrier to entry for engagement.
+
+- **Built with:** Astro, JavaScript, Markdown, YAML
+- **Runs on:** Cloudflare Pages, GitHub Actions, Render
+- **Talks to:** Remark42 (hosted on Render), Cloudflare Turnstile, and Kit email list
+- **Leverages:** Wrangler, pnpm, Astro's build-time image pipeline, wordpress-export-to-markdown
+
+## What It Taught Me
+
+I was fairly familiar with building in Astro because of this site, nebulouscode. But rebuilding five at once with a pre-determined design from WordPress was a different problem. Shared components made it manageable. I'd never had a reason to leverage them before—one standalone site didn't justify them, five do. And it makes every subsequent site easier to build.
+
+As part of the process of deploying the sites I learned about Google's Lighthouse tool and front-end web performance optimizations. Turns out there were a lot of rabbit holes like that. Even though this project was moving away from WordPress it gave me a lot of appreciation for what WordPress was doing behind the scenes that I always took for granted.

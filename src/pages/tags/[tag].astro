@@ -15,6 +15,7 @@
 import BaseLayout from '~/layouts/BaseLayout.astro';
 import ActionLink from '~/components/ActionLink.astro';
 import PageHeader from '~/components/PageHeader.astro';
+import { termLabel, termTitle } from '~/lib/labels';
 import PostCard from '~/components/PostCard.astro';
 import ProjectCard from '~/components/ProjectCard.astro';
 import type { CollectionEntry } from 'astro:content';
@@ -64,12 +65,12 @@ const parts = [
 ].filter(Boolean);
 ---
 
-<BaseLayout title={`${value} — nebulous-code`} description={`Writing and projects tagged ${value}.`}>
+<BaseLayout title={`${termTitle(value)} — nebulous-code`} description={`Writing and projects tagged ${termLabel(value)}.`}>
   <div class="container-wide">
     <PageHeader
       eyebrow="TAG"
-      title={value}
-      lede={`${parts.join(' and ')} tagged ${value}.`}
+      title={termTitle(value)}
+      lede={`${parts.join(' and ')} tagged ${termLabel(value)}.`}
     />
 
     <section class="section">

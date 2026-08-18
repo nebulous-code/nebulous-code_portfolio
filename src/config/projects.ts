@@ -95,7 +95,11 @@ export type StackTech =
   | 'excel'
   | 'github_actions'
   | 'axum'
-  | 'sqlx';
+  | 'sqlx'
+  | 'astro'
+  | 'cloudflare_pages'
+  | 'remark42'
+  | 'wrangler';
 
 /**
  * What kind of thing `liveUrl` points at, which decides how the link reads.
@@ -143,6 +147,24 @@ export const PROJECTS: ProjectConfig[] = [
     liveUrl: 'https://quiet-cube.com/',
     linkKind: 'product',
     stack: ['postgres', 'axum', 'sqlx'],
+  },
+  {
+    slug: 'author-sites',
+    repo: 'nebulous-code/astro_sites',
+    // Private: it runs the publishing company's sites, and the repo carries
+    // client content. Counts and dates still surface; nothing else does.
+    visibility: 'private-saas',
+    tracked: true,
+    // Must stay false while the repo is private — this is what keeps commit
+    // messages, branch names and SHAs off the page. See the note on the field.
+    allowlistContent: false,
+    liveUrl: 'https://nicholaslicalsi.com',
+    linkKind: 'product',
+    // Doing more work here than on the other projects: with allowlistContent
+    // false the languages endpoint is never read, so this list is the entire
+    // technology row rather than a supplement to it. `astro` earns a place it
+    // wouldn't on a public repo, where Linguist would report it.
+    stack: ['astro', 'cloudflare_pages', 'github_actions', 'remark42', 'wrangler'],
   },
   {
     slug: 'chip8-emulator',

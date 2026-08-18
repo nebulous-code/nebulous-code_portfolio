@@ -21,6 +21,7 @@ import Eyebrow from './Eyebrow.astro';
 import { getProjectBySlug } from '~/config/projects';
 import { getInheritedTech, getProjectDisplay, slugify } from '~/lib/content';
 import { pickFeaturedTech } from '~/lib/stack';
+import { termLabel } from '~/lib/labels';
 import { updatedLabel } from '~/lib/dates';
 
 interface Props {
@@ -65,10 +66,10 @@ const dateLabel = publishedAt.toLocaleDateString('en-US', {
         </span>
       ) : null}
       <span class="seg">
-        <a class="category" href={`/blog/category/${slugify(category)}`}>{category}</a>
+        <a class="category" href={`/blog/category/${slugify(category)}`}>{termLabel(category)}</a>
       </span>
       {featured.length > 0 ? (
-        <span class="seg tech">{featured.join(' · ')}</span>
+        <span class="seg tech">{featured.map(termLabel).join(' · ')}</span>
       ) : null}
     </p>
 
@@ -76,7 +77,7 @@ const dateLabel = publishedAt.toLocaleDateString('en-US', {
       <div class="chips">
         {tags.map((tag) => (
           <a class="chip-link" href={`/tags/${slugify(tag)}`}>
-            <Badge tone="blue">{tag}</Badge>
+            <Badge tone="blue">{termLabel(tag)}</Badge>
           </a>
         ))}
       </div>
