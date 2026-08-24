@@ -13,6 +13,8 @@
  *   - Inline <code> uses Departure Mono so it visibly differs from
  *     the surrounding mono body.
  *   - Headings inside prose use Source Serif 4.
+ *   - Tables use Departure Mono and scroll horizontally on their own rather
+ *     than overflowing the page. See the table block below.
  *
  * Usage:
  *   <Prose><Content /></Prose>
@@ -187,5 +189,72 @@ const { class: className = '' } = Astro.props;
     border: 0;
     border-top: 1px solid var(--color-line);
     margin-block: var(--space-10);
+  }
+
+  /*
+   * Tables.
+   *
+   * `display: block` is what makes overflow-x work. A real <table> ignores
+   * overflow and just pushes past its container, which on a phone drags the
+   * page's right gutter with it — the same failure the project-card footer
+   * had. Markdown gives no wrapper element to scroll instead, so the table
+   * becomes its own scroll container.
+   *
+   * The cost is that a narrow table no longer stretches to the measure; it
+   * shrink-wraps to its content. That reads fine and is the better trade.
+   */
+  .prose table {
+    display: block;
+    overflow-x: auto;
+    border-collapse: collapse;
+    width: max-content;
+    max-width: 100%;
+    margin-block: var(--space-9);
+    /* Departure Mono, as used by the KPI cells: a benchmark table is closer
+       to that grid than to running prose, and its figures are fixed-width so
+       columns of numbers line up by place value. */
+    font-family: var(--font-mono);
+    font-size: 13px;
+    line-height: 1.5;
+  }
+
+  .prose thead th {
+    text-align: left;
+    font-weight: 400;
+    color: var(--color-ink-muted);
+    text-transform: lowercase;
+    border-bottom: 1px solid var(--color-line);
+  }
+
+  .prose th,
+  .prose td {
+    padding: var(--space-3) var(--space-5);
+    white-space: nowrap;
+  }
+
+  /* Hairline between rows, but not under the last one — the table should end
+     on content, the way the KPI grid does. */
+  .prose tbody tr + tr td {
+    border-top: 1px solid var(--color-line);
+  }
+
+  .prose tbody td:first-child {
+    color: var(--color-ink);
+  }
+
+  /*
+   * First column labels the row; everything after it is a value, so the rest
+   * right-align and digits line up. A future table with text in column two
+   * will look wrong here and wants an explicit override rather than a change
+   * to this rule.
+   */
+  .prose th:not(:first-child),
+  .prose td:not(:first-child) {
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .prose tbody td:not(:first-child) {
+    color: var(--color-ink-muted);
   }
 </style>
