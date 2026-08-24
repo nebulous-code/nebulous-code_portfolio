@@ -1,0 +1,99 @@
+---
+title: When to Rewrite Prod
+summary: Five WordPress sites moved to Astro. What it saved, what Lighthouse said about it, and when leaving a stable system alone stops being the safe call.
+publishedAt: 2026-09-01
+category: advice
+tags:
+  - wordpress
+  - migration
+  - web_performance
+project: author-sites
+---
+
+I write fiction and other silly things on the internet. I've been doing this for almost ten years and ten years ago the way to host a website with a blog was via WordPress. I set one up a while ago and never really thought much of it. I put stories on there and restyled it once or twice.
+
+I never really came back to this project despite my skills as a software developer improving. It "worked" and that was a feature in and of itself. No reason to get in the way. No need to rewrite something that's stable just to chase a shiny new tool. I focused my time developing other skills and let these sites sit in prod doing what they did.
+
+But the papercuts were adding up. The number of sites I needed to maintain naturally expanded as the company grew and we brought on new authors and imprints. I got constant emails letting me know that some plugin was updating. I had to deal with a situation every few months where the site would be down, slow, or need manual SSL registration. And I didn't know what was going on under the hood because I break out in hives at the sight of PHP.
+
+Then I built this site, nebulouscode.com, with Astro and thought to myself "well this is a neat little framework, why don't I do that for the rest of my sites?"
+
+It seemed like it'd save me a fair bit of money -- which matters a lot to a small indie publishing company. And I suspected I'd get a little more performance out of the sites -- that turned out to be an understatement. But most of all I got sites that were built in a way I understood -- I never learned PHP and god willing I'll never need to.
+
+## Process
+
+While this isn't (and shouldn't be) a guide to how to migrate yourself the steps were fairly straightforward thanks to a number of tools out there.
+
+Exporting the WordPress sites was easy enough. I stuck them in a new git repo and then used the tool [wordpress-export-to-markdown](https://github.com/lonekorean/wordpress-export-to-markdown) to convert the existing posts to markdown, which is the form that Astro prefers for its content.
+
+The migration wasn't perfect but I sic'd an AI agent on it to clean everything up so that it was presentable. I wasn't having the agent write new content, just make sure that the parsing of the old content was clean. This kind of pattern matching is exactly what these kinds of tools are useful for. And the alternative was me re-reading all my old writing -- which for a writer is a fate worse than death.
+
+Then I started building out the sites. I had the original html/xml and this was a big lift. This felt like a good opportunity to try out Fable which was able to do a first pass without much handholding. It got all the pages in the right place copying over exact text and images when it could. It was solid pseudo code and a good starting place for me to start digging in deeper.
+
+I never would've launched this version of the sites. It would've taken me a million prompts to get it perfectly like I wanted. These tools still aren't ready to do something like this on their own but it certainly saved me a lot of rote work I had no interest in doing.
+
+Cleanup was straightforward. I added the proper images where it had missed them. Got the search and 404 pages to share the same components (Fable seemed to think writing individual search boxes for every site was a good idea). And I improved the carousels which is something I'd always wanted on my WordPress sites but never seemed to have any luck with them.
+
+I put all five of these sites in one monorepo. Yes, I can hear you gasping. In most cases putting all the code into one giant repo that can't be decoupled is a horrible idea. However, in this case it let me inherit and share a lot of the Astro components across sites. I could style them differently to match each site but when I fixed a bug on one, all the sites got the benefits. As nice as microservices are, this was a good enough reason for me to go against the grain.
+
+Deployment was easy. I have a GitHub action scheduled to rebuild the site every time I push a change. I've also got a scheduled GitHub job so that every morning at 7:30 am it checks if any of my posts need to go out. I've got the release date in the markdown's yaml header which helps the build decide what needs to be included for that morning's release. Nothing new means nothing deployed.
+
+## Hiccups along the way
+
+The migration wasn't perfect, and that was actually where the interesting stuff happened.
+
+### Local Serving
+
+I'd used Cloudflare for DNS in the past but since these sites are hosted on Cloudflare's pages I got to reach for a new tool. I'd never used Wrangler before. It was the best way to get the pages to display accurately in a local dev environment since `astro dev` wasn't playing nice with the url redirects, pages functions, and the security headers. Since at least one of these items was present/needed on each page it made more sense to serve via Wrangler than the native tooling. It had the added benefit of making deployment easy and got folded into my nightly GitHub action script, because it's the easiest way to get the build results onto Cloudflare for release.
+
+### Loading Efficiencies
+
+Once the sites were out I ran a few Lighthouse tests via Chrome's dev tools to see how well these shiny new sites were performing. Google's Lighthouse tool is built into the dev tools section of the Chrome browser and measures page load times and accessibility. It's a convenient benchmark tool for a front-end-heavy project like this.
+
+Unfortunately, they were worse. Three of the five sites were performing worse than the original WordPress build. I'd loaded all the images unoptimized, not realizing that WordPress was either obfuscating the load issues or resizing them for me. The three sites that failed were all the photo-heavy sites.
+
+The fix was easy enough. I routed every image through Astro's build-time image pipeline so the resizing and re-encoding of the images happens at build time rather than load time. The repo gets to keep the high quality version but the client gets served the more efficient image. Benefit of a monorepo is that I get to leverage this work across all sites, which is good because most of the sites had this problem.
+
+Here are the benchmarks through the process today.
+
+| Site | WordPress | First build | Final | Page weight |
+| --- | --- | --- | --- | --- |
+| TerrierTales    | 63 | 64 | 92 | 1.25 → 0.68 MB |
+| NicholasLicalsi | 74 | 61 | 92 | 1.42 → 0.89 MB |
+| MikeLDowney     | 62 | 75 | 87 | 5.73 → 0.39 MB |
+| KatelynCombs    | 86 | 49 | 86 | 1.86 → 0.72 MB |
+| StepIntoTheRoad | 72 | 60 | 77 | 0.87 → 0.87 MB |
+
+Three sites had measurable improvements in their scores and a large drop in page weight. KatelynCombs.com didn't have much improvement in the score but got the page weight trimmed significantly. It's an art-heavy site, which is why the first build to final had a big jump, but reCAPTCHA is still holding it back. StepIntoTheRoad.com barely moved on the page weight because it is mostly forwarding out to other sites and doesn't have a lot of individual assets on its pages.
+
+Moral of the story here was that a tool like WordPress that had been around for fifteen years had built up tooling to make some routine efficiencies invisible. In a migration, I've got to reaccount for those. And like WordPress, someone with Astro had already baked it in.
+
+The Lighthouse story isn't over. I'm no longer losing to the WordPress builds but I am still underperforming where I'd like to be. My email list tool is embedding reCAPTCHA in its forms and I need to clean that up. It's a lift in and of itself. Once the work is done there will be a blog post outlining that.
+
+### Comment Limitations
+
+I hit some issues with Remark42, the comment tool I was using. There was nothing wrong with the tool itself, just how I chose to use it. I'd love to blame this on a product manager's unrealistic requests, but I'm the product manager on this one so (as usual) I'm the only one left to blame.
+
+I had a unique set of criteria where I didn't want to force people to have a login to leave a comment (it's a level of friction I'm not interested in creating on a low traffic site) but I still wanted bot protection, moderation, and the ability to block others. I know from experience that readers don't want to log in to leave comments about a story (which is something WordPress demanded). I also know from experience that bots will run rampant in the comment section if you don't put some walls up. These two business requirements were at odds with each other.
+
+My solution was to add some honeypot checkboxes and Cloudflare Turnstile (which I prefer over Google's reCAPTCHA for privacy reasons), and add a moderation queue. The details of this setup are worth a post themselves and that will be coming out shortly.
+
+## What's Next?
+
+The sites are built but because of the ways I build them I'm seeing new opportunities for tools that can integrate into the site and my business as a whole.
+
+Migrating the sites brought to light a lot of the stuff that was outdated on them. Specifically my publishing company's site StepIntoTheRoad.com was once my personal writing blog. I moved a lot of that personal stuff to my writer site NicholasLicalsi.com, but I never backfilled publishing content. I had to draw the line somewhere on this build to ship the sites and a redesign was defined as out of scope for this project.
+
+Part of the reason the content was outdated was because my metadata is stored in a ton of different places. I knew it was stored poorly but it wasn't until I actually had to go find it all that I realized the true cost of not having a central storage location. I'd like to build out a central location for them and then have the Astro nightly builds call that location via an API to get the latest book metadata. Although, I'll admit this might be an excuse for a fun project more than a true business need. Company goals will dictate when my limited time will get to go towards this kind of product (nothing new about that).
+
+## What I'd Do Differently
+
+Overall I'm happy with the approach and outcome. I've got no shortage of things to build out adjacent to this, but I have no doubt the sites will hum along happily for the next ten years.
+
+I did all the basics right. I backed up the sites. Made sure not to pull my hair out matching them one to one. Didn't blindly trust the LLM to do it right and "make no mistakes." Made sure the cost of time was made up for in the savings of the migration.
+
+The number one thing I wish I had done was pull benchmarks earlier in the process. I didn't realize I cared about it until after the sites were live. I was distracted by the line item savings but didn't actually consider the product I was delivering and what "good" meant to that. A static site should load quickly. I trusted Astro would do that, and with some tweaking it did. But this was by far the biggest blind spot for this build.
+
+The counterintuitive thing that I'd do differently is I'd reevaluate sooner. Astro is not a new framework, and I probably could've done this migration last year if I wanted and saved a year of expenses. The site infra is one of the company's biggest line items and if I'd sat down to research how to migrate away from WordPress 2-3 years ago I could've gotten these savings sooner. Sometimes putting a rewrite like this off is a good idea (and I don't regret it). However, sometimes unnecessarily sticking to an old way of doing things costs you more than the stability of being on them.
+
+Overall this was a fun project. It was a lot like tuning the engine of a 20-year-old car. Everyone else sees the exterior and thinks nothing changed. I've put in a lot of work no one will see or appreciate. But I understand what's going on under the hood better and I know I can trust these to run reliably without much maintenance. And that alone is worth more than the cost savings I set out to gain at the start of this project.
