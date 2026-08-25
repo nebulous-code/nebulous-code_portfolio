@@ -100,6 +100,19 @@ Two sources, merged for display:
 
 **`title`, `tagline`, `tags`, and `featured` are not here** — they live in the summary's MDX. Every string a human writes about a project, plus the editorial call of whether to feature it, is in the file you're editing when you make those decisions. `featured: false` drops a project from the **home page only**; `/projects` lists everything, featured first.
 
+## Updating the resume
+
+Two steps, and both matter:
+
+1. Replace `public/resume.pdf` with the new file. Keep the name — the URL is linked from the resume page and from anywhere you've shared it.
+2. Update `LAST_UPDATED` in `src/pages/resume.astro` to the new month.
+
+Step 2 is the one that gets forgotten. The stamp is a hand-written constant because the PDF has no readable date inside it and its filename never changes, so nothing can derive it. It has already gone stale once, claiming June 2025 for months after the file was replaced. If the page says a month you don't recognise, this is why.
+
+**Only ever one resume lives in the repo.** Past versions are not kept in a folder here: this repo is public, and a browsable directory of every resume you've written is the kind of thing a hiring manager can flip through in the GitHub UI and draw conclusions from — comparing job titles across years and deciding for themselves what a role "really" was. Keep the archive on your own machine.
+
+Old versions do remain reachable by digging through commit history, which is a deliberate trade: hiding them completely would mean rewriting history or moving the file out of the repo entirely, and the concern is casual browsing rather than determined archaeology.
+
 ## Adding a blog post
 
 Create `src/content/blog/my-post.mdx`. **The filename is the URL** — this post lands at `/blog/my-post`.

@@ -6,7 +6,13 @@ import Prose from '~/components/Prose.astro';
 
 // The date on the PDF itself, not the day the page was touched — a visitor
 // judging freshness cares how old the resume is.
-const LAST_UPDATED = new Date('2025-06-01');
+//
+// UPDATE THIS WHEN YOU REPLACE public/resume.pdf. It is a constant because
+// the PDF carries no readable date of its own and its filename is fixed, so
+// there is nothing to derive it from. It has gone stale once already: it
+// claimed June 2025 for months after the file was replaced. There is one
+// other step, and docs/MAINTENANCE.md lists both.
+const LAST_UPDATED = new Date('2026-08-01');
 ---
 
 <BaseLayout
