@@ -1,0 +1,103 @@
+---
+title: An Emulator is a Great Portfolio Project
+summary: A spec someone else already wrote, tests that actually grade you, and real constraints without needing real users. Why it beats another dashboard with one user.
+publishedAt: 2026-09-15
+category: advice
+tags:
+  - emulator
+  - portfolio
+  - career
+project: chip8-emulator
+---
+
+Building an emulator is one of the best portfolio projects and programming exercises that exist, and I wish I'd taken one on sooner.
+
+An emulator is a great exercise because it does a surprisingly accurate imitation of real business conditions and constraints. If you're going to write code professionally you need to be able to practice and prove that you can manage implementing a specification. Emulators have the added benefit of guardrails because the work you need to do was outlined by the original engineers.
+
+Since the original engineers designed the product for you there is freedom in how you build it, instead of what you build. Deciding what to build is useful. However, focus helps learning and removing the product design here allows you to practice other important areas of software development like project structure, parsing a spec, test-driven development, and experimenting with new libraries.
+
+## Why It's Great
+
+### Spec is Already Written
+
+One of the biggest gaps I see in portfolio projects is that you're either building something new for yourself or you're building something that's been built 100 times. At the point that the project has another user it stops being a project and becomes a product.
+
+And the weird thing about products is that they have to exist in the real world with real users who have strong opinions, obtuse requirements, and little ability to communicate them cleanly.
+
+The great thing about an emulator is that it doesn't force you to go get customers in order to face the messy reality of the real world and limits of a product. The product was already made, faced the limitations of reality and the technology at its time. And best of all someone more passionate about the device than you'll ever be has likely already written a document outlining it in immense detail.
+
+Now you get to wrestle with the obtuse requirements without having to talk to someone. Which is a good middle ground in my opinion.
+
+One thing that would seem like an issue is that the docs often disagree with each other. But that's part of the fun. Rarely do clients agree with each other in what they want built, and working through this disagreement is part of the skill of the job. Luckily with emulators there is a right answer (or at least an answer that runs the ROMs accurately), which is a large improvement over working with stakeholders.
+
+### Tests are Often Already Written
+
+Odds are good that someone more obsessed with the system than you has already written tests. Which means that your ability to tell if you succeeded at completing the project already exists and is clearly defined.
+
+A lot of portfolio projects are either just made for show and have no real world application or they claim to solve a problem that no one really cares to figure out if it's solved. I've made dashboards and SaaS apps as portfolio projects that never get a user that isn't me. That's fine, and arguably necessary. However, it leaves open the question of "does this thing really work?"
+
+With a test you can definitively prove: "Yes it does what it should do."
+
+This isn't to say that you shouldn't have dashboards and SaaS apps with no users in your portfolio, but I think having a clearly defined successful project is also useful when presenting yourself to others.
+
+For the Chip-8 specifically I found a lot of value in [Timendus' Test Suite](https://github.com/Timendus/chip8-test-suite). Other test suites tested functionality different from what the docs specified, which was a fun puzzle to figure out why the code did what the doc said but the test suite was failing. There was a right answer out there, just took a moment for me to find it.
+
+### You Get to Learn the Basics of Computing
+
+Computers haven't really changed since the 80s, arguably since the 60s but we really got our stuff together in the microprocessor age. As programmers I feel like we're focused on "How do we get the computer to do what we want?" and we leave all the nasty work of how it does what we want to someone else. Having an understanding of how a language parses and how commands are read by a computer is fascinating to me. It gives me a greater appreciation of the abstraction that the languages provide. Writing a few test ROMs in assembly really makes you appreciate the ergonomic choices that C or Rust give you. But it also opens my eyes to all the shortcuts that something like Python makes as well. And all of this without having to get a breadboard out and read datasheets or understand logic gates and flip flops.
+
+### You Decide the Structure
+
+A skill that is rarely exercised early on in a developer's career is how you structure a large project. Often you're working in someone else's code base or you're following a tutorial where someone else thought through the structure. The hardware design will give you some guidance. I structured my project around memory processing, display, CPU, etc. But the interface (how the methods talked to each other) was my choice to design. It's a nice balance between getting guidance without getting requirements.
+
+Early on in my development of the Chip-8 emulator, I was more worried about understanding the computing and the process of designing an emulator. I just stuck everything in one project and only split out files when it made sense for organization. By the end there was no way to embed it into any kind of presentation application because my program was in charge of everything. After some refactoring I got it cleaned up and the Chip-8 program is now a library that can be consumed in WebAssembly or any other Rust application, but it was a good learning experience about how and where to package things.
+
+## What I Wouldn't Do
+
+### Don't ask AI to do it for you
+
+I think the number one constraint on this is that you shouldn't use an LLM to solve this problem. There are already countless emulators out there and the LLM is going to just copy the code that already works and implement it.
+
+If the goal is to learn how to design a project and build a system from the ground up with predefined constraints, then the code should probably be handcrafted. The goal here isn't to get it shipped quickly (there are more emulators on the market than there ever needs to be). It's to learn the system and the design limitations.
+
+Some places an LLM would fit in this project are through research (although I would defer to the source docs) and syntax help if you're using a language you're familiar with but don't know by heart yet.
+
+### Don't Follow a Tutorial
+
+I think an emulator is a great way to get out of tutorial hell. You can build it with guidance and probably would benefit from watching a few people talk about how the system works. But following a tutorial about how to program the emulator in your preferred language is not a path worth going down (assuming you can even find a video like that).
+
+When you're learning to program, or learning a new language, you wind up plateaued at a point where you've followed enough tutorials that you know the basic syntax and coding philosophies of the language without having actually gotten your hands dirty with a project from scratch.
+
+An emulator can help give you guardrails, as I've mentioned before, without handing you all the answers out of the gate like a tutorial would. And an emulator has the benefit of being able to be implemented in any language. So if you built an emulator in Python and want to learn Rust you can use all the same business knowledge and test suites you used before and focus on the exercise of learning a new language.
+
+### Don't Use Your Favorite Language
+
+I would encourage you to use a language that you know well but don't necessarily know perfectly. I built the Chip-8 emulator in Rust after having read The Book and doing Rustlings. I was familiar enough with it that I understood how everything should be written without feeling that the project was too easy. I got to reach for libraries I hadn't used before because I was new to the Rust ecosystem. If I'd done this in languages I'm familiar with like JavaScript, C#, or Python I probably would've learned less. By building a defined system in a language I was learning I got to learn how to design with the language rather than just slap something together.
+
+As an extension of this, you could also choose to use a library that is suboptimal or new to you. Even if you're familiar with the language, picking a tool out of the toolbox that wasn't built for this and figuring out how to rework it to run an emulator would be a fun exercise. Since the emulator itself is fairly low level programming any language (or anything that could work like a programming language) is fair game.
+
+### Don't Assume Your Emulator will be Fully Featured
+
+Every project in the history of software development has wrestled with having to have a scope defined. An emulator is no different. These were/are complex systems that took hundreds of professional engineers years to develop. Some of the quirks (unintended consequences of the hardware's limitations or implementations) are going to be difficult to implement unless you've got a good understanding of the original design (which you'll luckily pick up after working on the project for a while).
+
+Eventually you have to decide when you're done. I would hesitate to define what your definition of done is until you've spent some time working on it. Without an understanding of what you're building it's hard to determine what's within your skill sets. And I wouldn't say that you should shoot for fully featured, because there will always be some edge case of a feature that is difficult to implement like console expansion packs or future iterations of the console.
+
+I stopped my emulator when I got to the point where I was doing the basic Chip-8 functionality. It had served its purpose for me. I'd learned the basics of making an emulator. I implemented a few quirks I thought were neat like how the registers managed carries and the screen wrapping, but beyond that I was happy with the little emulator and decided my time was better spent on presenting it and moving on to my next project.
+
+## Conclusion
+
+There's a strange line that's difficult to define between someone who has the technical knowledge to write perfectly optimized code and someone who can deliver code in a timely fashion that meets the user's requirements and is performant enough.
+
+I still don't know what O(1) time is or how to write a binary tree search. But I understand how to talk with customers and stakeholders to get information out of them and build them software they need to do their job better.
+
+When hiring developers it's difficult to grade these differences on the spot. As a job candidate it's difficult to enunciate them in a measurable way. Building an emulator is a wonderful exercise for grading and proving that.
+
+Instead of navigating a customer you're navigating docs and test ROMs. Those guardrails are clear grades that a client will never give you. However, they're advanced enough that you're still faced with real world constraints (just like the original device engineers were faced with).
+
+Now that I've done an emulator project I understand what it represents. If I see someone with an emu in their portfolio I'll know at the very least they can get something done with the crummy project outlines I typically have to work with. It gives me confidence I can give them a problem that I haven't fully worked out myself, which is exactly the kind of person I want to work with.
+
+And even if no one ever asks me about the Chip-8 in an interview, and I never see a candidate who took one on, I am proud of what I built. Not because it's new or cutting edge but because it was a good challenge.
+
+Sometimes it feels good to just pick up a puzzle that you know has been and can be solved. It's like going for a run even though we have cars.
+
+So spend a weekend picking up the project for the fun of it. You'll learn something and you'll have a quality show piece in your portfolio.
