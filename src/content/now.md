@@ -1,9 +1,9 @@
 ---
 # Edit this file when your focus shifts. The home page reads it directly.
 # Keep it short — one or two sentences per active thread.
-updatedAt: 2026-08-11
+updatedAt: 2026-10-09
 ---
 
-Lately the main focus has been cleaning up and shipping all my half started projects. Pokemon Card Market Intelligence Dashboard has been shipped fully. Hoping to get this site finished up this month.
+Mostly focused on my day job lately, where I am migrating legacy VBA code into Python, moving data from Excel to a database, and improving the process and workflow for myself and my coworkers.
 
-When I'm not getting half built things over the finish line I am cleaning up bugs and implementing enhancements in my personal planning application tdx_. 
+When I have a spare weekend or evening, I'm working on tools around my fiction writing, including a TUI application that helps me track day-to-day word count. Once again, contributing to my never-ending quest to use something more robust than Excel.
